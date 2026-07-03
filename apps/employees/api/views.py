@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from apps.employees.api.serializers import EmployeeSerializer
 from apps.employees.models import Employee
+from apps.employees.services import EmployeeService
 
 # Create your views here.
 
@@ -23,8 +24,23 @@ class EmployeeAPIView(APIView):
         """
         Handle POST requests to create a new employee.
         """
+
         serializer = EmployeeSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            employee = EmployeeService.create_employee(
+                serializer.validated_data
+            )
+
+            response_serializer = EmployeeSerializer(employee)
+
+            return Response(
+                response_serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
