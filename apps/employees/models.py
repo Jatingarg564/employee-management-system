@@ -44,6 +44,8 @@ class Employee(models.Model):
     employment_type = models.CharField(max_length=2, choices=EmploymentType.choices)
     role = models.CharField(max_length=2, choices=EmploymentRole.choices, default=EmploymentRole.EMPLOYEE)
     status = models.CharField(max_length=2, choices=EmployeeStatus.choices, default=EmployeeStatus.ACTIVE)
+    resignation_date = models.DateField(null=True, blank=True)
+    termination_date = models.DateField(null=True, blank=True)
 
     salary = models.DecimalField(max_digits=10, decimal_places=2)
 
