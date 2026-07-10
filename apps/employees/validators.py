@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
-
 from apps.employees.choices import EmployeeStatus
 
 
