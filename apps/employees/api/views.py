@@ -1,11 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from apps.employees.api.serializers import EmployeeSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.employees.api.serializers import (
+    EmployeeCreateSerializer,
+    EmployeeDetailSerializer,
+)
 from apps.employees.models import Employee
 from apps.employees.services import EmployeeService
 
-# Create your views here.
 
 class EmployeeAPIView(APIView):
     """
@@ -14,33 +17,43 @@ class EmployeeAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Handle GET requests to retrieve employee data.
+        Retrieve all employees.
         """
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        employees = Employee.objects.order_by("employee_code")
+
+        detail_serializer = EmployeeDetailSerializer(
+            employees,
+            many=True,
+        )
+
+        return Response(
+            detail_serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request, *args, **kwargs):
         """
-        Handle POST requests to create a new employee.
+        Create a new employee.
         """
 
-        serializer = EmployeeSerializer(data=request.data)
+        create_serializer = EmployeeCreateSerializer(
+            data=request.data,
+        )
 
-        if serializer.is_valid():
+        create_serializer.is_valid(
+            raise_exception=True,
+        )
 
-            employee = EmployeeService.create_employee(
-                serializer.validated_data
-            )
+        employee = EmployeeService.create_employee(
+            create_serializer.validated_data,
+        )
 
-            response_serializer = EmployeeSerializer(employee)
-
-            return Response(
-                response_serializer.data,
-                status=status.HTTP_201_CREATED,
-            )
+        detail_serializer = EmployeeDetailSerializer(
+            employee,
+        )
 
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST,
+            detail_serializer.data,
+            status=status.HTTP_201_CREATED,
         )
