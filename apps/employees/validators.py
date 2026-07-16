@@ -2,7 +2,46 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from apps.employees.choices import EmployeeStatus
+from apps.employees.models import Employee
+from django.contrib.auth.models import User
 
+def validate_email_uniqueness(employee, email):
+    """
+    Validate that the email is unique across all employees.
+    """
+
+    employees = Employee.objects.filter(
+        email=email,
+    )
+
+    if employee is not None:
+        employees = employees.exclude(
+            id=employee.id,
+        )
+
+    if employees.exists():
+        raise ValidationError(
+            "An employee with this email already exists."
+        )
+    
+def validate_username_uniqueness(user, username):
+    """
+    Validate that the username is unique across all users.
+    """
+
+    users = User.objects.filter(
+        username=username,
+    )
+
+    if user is not None:
+        users = users.exclude(
+            id=user.id,
+        )
+
+    if users.exists():
+        raise ValidationError(
+            "A user with this username already exists."
+        )
 
 def validate_age(date_of_birth, date_of_joining):
     """

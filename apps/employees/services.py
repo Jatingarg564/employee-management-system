@@ -9,16 +9,9 @@ class EmployeeService:
     """
 
     @staticmethod
-    def generate_employee_code(role, department, joining_year):
+    def get_next_employee_sequence(role, department):
         """
-        Generate an employee code.
-
-        Format:
-        <ROLE><DEPARTMENT><YEAR><SEQUENCE>
-
-        Example:
-        EMIT20260001
-        EMIT20270002
+        Get the next employee sequence for a role and department.
         """
 
         last_employee = (
@@ -31,9 +24,34 @@ class EmployeeService:
         )
 
         if last_employee is None:
-            sequence = 1
-        else:
-            sequence = int(last_employee.employee_code[-4:]) + 1
+            return 1
+
+        return int(last_employee.employee_code[-4:]) + 1
+
+    @staticmethod
+    def get_employee_sequence(employee_code):
+        """
+        Extract the sequence number from an employee code.
+        """
+
+        return int(employee_code[-4:])
+
+    @staticmethod
+    def generate_employee_code(
+        role,
+        department,
+        joining_year,
+        sequence,
+    ):
+        """
+        Generate an employee code.
+
+        Format:
+        <ROLE><DEPARTMENT><YEAR><SEQUENCE>
+
+        Example:
+        EMIT20260001
+        """
 
         return (
             f"{role}"
@@ -60,21 +78,28 @@ class EmployeeService:
 
         # Create Django user
         user = User.objects.create_user(
-            username = username,
-            password = password,
-            email = validated_data["email"],
-            first_name = validated_data["first_name"],
-            last_name = validated_data["last_name"],
+            username=username,
+            password=password,
+            email=validated_data["email"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+        )
+
+        # Determine employee sequence
+        sequence = EmployeeService.get_next_employee_sequence(
+            role=role,
+            department=department,
         )
 
         # Generate employee code
         employee_code = EmployeeService.generate_employee_code(
-            role = role,
-            department = department,
-            joining_year = joining_year,
+            role=role,
+            department=department,
+            joining_year=joining_year,
+            sequence=sequence,
         )
 
-        #Prepare employee data
+        # Prepare employee data
         validated_data["user"] = user
         validated_data["employee_code"] = employee_code
 
@@ -84,7 +109,7 @@ class EmployeeService:
         )
 
         return employee
-    
+
     @staticmethod
     def update_employee(employee, validated_data):
         """
@@ -92,9 +117,11 @@ class EmployeeService:
         """
         for attr, value in validated_data.items():
             setattr(employee, attr, value)
+
         employee.save()
+
         return employee
-    
+
     @staticmethod
     def update_employee_status(employee, status):
         """
@@ -102,8 +129,9 @@ class EmployeeService:
         """
         employee.status = status
         employee.save()
+
         return employee
-    
+
     @staticmethod
     def soft_delete_employee(employee):
         """
@@ -111,13 +139,17 @@ class EmployeeService:
         """
         employee.is_deleted = True
         employee.save()
+
         return employee
-    
+
     @staticmethod
     def transfer_employee(employee_id):
         """
         Transfer an existing employee.
         """
-        employee = Employee.objects.get(id=employee_id)
-        # Add transfer logic here
+
+        employee = Employee.objects.get(
+            id=employee_id,
+        )
+
         return employee
