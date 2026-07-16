@@ -1,8 +1,5 @@
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-
 from rest_framework import serializers
-
 from apps.employees.models import (
     Department,
     Designation,
@@ -13,11 +10,13 @@ from apps.employees.validators import (
     validate_age,
     validate_department_head,
     validate_department_transfer,
+    validate_email_uniqueness,
     validate_joining_date,
     validate_reporting_hierarchy,
     validate_reporting_manager,
     validate_salary,
     validate_status_transition,
+    validate_username_uniqueness,
 )
 
 
@@ -92,6 +91,16 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         Perform custom validations for employee creation.
         """
 
+        validate_email_uniqueness(
+            employee=None,
+            email=attrs["email"],
+        )
+
+        validate_username_uniqueness(
+            user=None,
+            username=attrs["username"],
+        )
+
         validate_age(
             attrs["date_of_birth"],
             attrs["date_of_joining"],
@@ -108,16 +117,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         validate_password(
             password=attrs["password"],
         )
-
-        if User.objects.filter(
-            username=attrs["username"]
-        ).exists():
-            raise serializers.ValidationError(
-                {
-                    "username":
-                    "A user with this username already exists."
-                }
-            )
 
         return attrs
 
@@ -151,17 +150,29 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         Perform custom validations for employee updates.
         """
 
+        email = attrs.get(
+            "email",
+            self.instance.email,
+        )
+
         salary = attrs.get(
             "salary",
-            self.instance.salary if self.instance else None,
+            self.instance.salary,
         )
 
         reporting_to = attrs.get(
             "reporting_to",
-            self.instance.reporting_to if self.instance else None,
+            self.instance.reporting_to,
         )
 
-        validate_salary(salary)
+        validate_email_uniqueness(
+            employee=self.instance,
+            email=email,
+        )
+
+        validate_salary(
+            salary,
+        )
 
         validate_reporting_manager(
             self.instance,
