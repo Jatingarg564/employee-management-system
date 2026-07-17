@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+
 from apps.employees.models import (
     Department,
     Designation,
@@ -24,6 +25,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for Employee model.
     """
+
     class Meta:
         model = Employee
         fields = (
@@ -54,12 +56,14 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+
 class EmployeeCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating Employee instances.
     """
 
     username = serializers.CharField(max_length=150)
+
     password = serializers.CharField(
         write_only=True,
         style={"input_type": "password"},
@@ -120,6 +124,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
+
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating employee information.
@@ -130,10 +135,10 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         fields = (
             "first_name",
             "last_name",
-            "email",
             "phone_number",
             "profile_photo",
             "address",
+            "department",
             "designation",
             "reporting_to",
             "employment_type",
@@ -150,14 +155,14 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         Perform custom validations for employee updates.
         """
 
-        email = attrs.get(
-            "email",
-            self.instance.email,
-        )
-
         salary = attrs.get(
             "salary",
             self.instance.salary,
+        )
+
+        department = attrs.get(
+            "department",
+            self.instance.department,
         )
 
         reporting_to = attrs.get(
@@ -165,13 +170,13 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             self.instance.reporting_to,
         )
 
-        validate_email_uniqueness(
-            employee=self.instance,
-            email=email,
-        )
-
         validate_salary(
             salary,
+        )
+
+        validate_department_transfer(
+            self.instance,
+            department,
         )
 
         validate_reporting_manager(
@@ -186,10 +191,12 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
 
         return attrs
 
-class EmployeeStatusSerializer(serializers.ModelSerializer):
+
+class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating employee status.
     """
+
     class Meta:
         model = Employee
         fields = (
@@ -200,37 +207,29 @@ class EmployeeStatusSerializer(serializers.ModelSerializer):
         """
         Perform custom validations for employee status updates.
         """
-        validate_status_transition(self.instance, attrs["status"])
-        return attrs
 
-class EmployeeTransferSerializer(serializers.ModelSerializer):
-    """
-    Serializer for transferring an employee to a different department.
-    """
-    class Meta:
-        model = Employee
-        fields = (
-            "department",
+        validate_status_transition(
+            self.instance,
+            attrs["status"],
         )
 
-    def validate(self, attrs):
-        """
-        Perform custom validations for employee transfer.
-        """
-        validate_department_transfer(self.instance, attrs["department"])
         return attrs
 
+
 class DepartmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Department model.
+    """
 
     class Meta:
         model = Department
         fields = (
-            "name", 
-            "code", 
-            "head", 
-            "budget", 
-            "location", 
-            "is_active"
+            "name",
+            "code",
+            "head",
+            "budget",
+            "location",
+            "is_active",
         )
 
     def validate(self, attrs):
@@ -257,12 +256,13 @@ class DesignationSerializer(serializers.ModelSerializer):
     """
     Serializer for Designation model.
     """
+
     class Meta:
         model = Designation
         fields = (
-            "name", 
-            "description", 
-            "is_active"
+            "name",
+            "description",
+            "is_active",
         )
 
     def validate(self, attrs):
@@ -271,3 +271,5 @@ class DesignationSerializer(serializers.ModelSerializer):
         """
 
         return attrs
+    
+    

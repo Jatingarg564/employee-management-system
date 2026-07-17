@@ -1,8 +1,12 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from apps.employees.models import Employee
-
-
+from django.utils import timezone
+from apps.employees.choices import EmployeeStatus
+from apps.employees.validators import (
+    validate_department_transfer, 
+    validate_status_transition
+)
 class EmployeeService:
     """
     Business logic for employee operations.
@@ -111,45 +115,153 @@ class EmployeeService:
         return employee
 
     @staticmethod
+    @transaction.atomic
     def update_employee(employee, validated_data):
-        """
-        Update an existing employee.
-        """
-        for attr, value in validated_data.items():
-            setattr(employee, attr, value)
+        old_role = employee.role
+        old_department = employee.department
+
+        updatable_fields = [
+            "first_name",
+            "last_name",
+            "phone_number",
+            "address",
+            "profile_photo",
+            "department",
+            "designation",
+            "reporting_to",
+            "employment_type",
+            "role",
+            "salary",
+        ]
+
+        for field in updatable_fields:
+            if field in validated_data:
+                setattr(employee, field, validated_data[field])
+
+        if old_role != employee.role or old_department != employee.department:
+            sequence = EmployeeService.get_employee_sequence(
+                employee.employee_code
+            )
+
+            employee.employee_code = EmployeeService.generate_employee_code(
+                role=employee.role,
+                department=employee.department,
+                joining_year=employee.date_of_joining.year,
+                sequence=sequence,
+            )
 
         employee.save()
 
         return employee
+    
+    @classmethod
+    @transaction.atomic
+    def update_employee_status(cls, employee, validated_data):
+        """
+        Update an employee's status and perform all related business actions.
+        """
 
-    @staticmethod
-    def update_employee_status(employee, status):
-        """
-        Update the status of an existing employee.
-        """
-        employee.status = status
+        old_status = employee.status
+        new_status = validated_data["status"]
+
+        validate_status_transition(employee, new_status)
+
+        employee.status = new_status
+
+        status_handlers = {
+            EmployeeStatus.ACTIVE: cls._handle_active_status,
+            EmployeeStatus.ON_LEAVE: cls._handle_on_leave_status,
+            EmployeeStatus.INACTIVE: cls._handle_inactive_status,
+            EmployeeStatus.RESIGNED: cls._handle_resigned_status,
+            EmployeeStatus.TERMINATED: cls._handle_terminated_status,
+        }
+
+        handler = status_handlers.get(new_status)
+
+        if handler:
+            handler(employee, old_status)
+
+        employee.user.save()
         employee.save()
 
         return employee
 
-    @staticmethod
-    def soft_delete_employee(employee):
+    @classmethod
+    def _handle_active_status(cls, employee, old_status):
         """
-        Soft delete an existing employee.
+        Handle ACTIVE status.
         """
-        employee.is_deleted = True
+
+        employee.user.is_active = True
+
+        if old_status == EmployeeStatus.RESIGNED:
+            employee.resignation_date = None
+
+    @classmethod
+    def _handle_on_leave_status(cls, employee, old_status):
+        """
+        Handle ON_LEAVE status.
+        """
+
+        employee.user.is_active = True
+
+    @classmethod
+    def _handle_inactive_status(cls, employee, old_status):
+        """
+        Handle INACTIVE status.
+        """
+
+        employee.user.is_active = False
+
+    @classmethod
+    def _handle_resigned_status(cls, employee, old_status):
+        """
+        Handle RESIGNED status.
+        """
+
+        employee.user.is_active = False
+
+        if employee.resignation_date is None:
+            employee.resignation_date = timezone.now().date()
+
+    @classmethod
+    def _handle_terminated_status(cls, employee, old_status):
+        """
+        Handle TERMINATED status.
+        """
+
+        employee.user.is_active = False
+
+        if employee.termination_date is None:
+            employee.termination_date = timezone.now().date()
+
+    @classmethod
+    @transaction.atomic
+    def soft_delete_employee(cls, employee):
+        """
+        Soft delete an employee by deactivating the account.
+        """
+
+        employee.status = EmployeeStatus.INACTIVE
+        employee.user.is_active = False
+
+        employee.user.save()
         employee.save()
 
         return employee
 
-    @staticmethod
-    def transfer_employee(employee_id):
+    @classmethod
+    @transaction.atomic
+    def transfer_employee(cls, employee_id):
         """
-        Transfer an existing employee.
+        Transfer an employee to a new department and/or reporting manager.
         """
 
-        employee = Employee.objects.get(
-            id=employee_id,
-        )
+        employee = Employee.objects.get(id=employee_id)
+
+        validate_department_transfer(employee)
+
+        employee.save()
 
         return employee
+    
