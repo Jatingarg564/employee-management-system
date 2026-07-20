@@ -160,11 +160,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             self.instance.salary,
         )
 
-        department = attrs.get(
-            "department",
-            self.instance.department,
-        )
-
         reporting_to = attrs.get(
             "reporting_to",
             self.instance.reporting_to,
@@ -174,10 +169,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             salary,
         )
 
-        validate_department_transfer(
-            self.instance,
-            department,
-        )
+        if "department" in attrs:
+            validate_department_transfer(
+                self.instance,
+                attrs["department"],
+            )
 
         validate_reporting_manager(
             self.instance,
@@ -190,7 +186,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
         return attrs
-
 
 class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
     """
