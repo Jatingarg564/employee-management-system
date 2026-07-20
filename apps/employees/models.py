@@ -34,7 +34,7 @@ class Employee(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=15, blank=True)
+    phone_number = models.CharField(max_length=15,blank=True,unique=True)
     date_of_birth = models.DateField()
 
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="employees")

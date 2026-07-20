@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -12,6 +13,23 @@ from apps.employees.models import Employee
 from apps.employees.services import EmployeeService
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Employees"],
+        summary="List Employees",
+        description="Retrieve all employees.",
+        operation_id="list_employees",
+        responses=EmployeeDetailSerializer(many=True),
+    ),
+    post=extend_schema(
+        tags=["Employees"],
+        summary="Create Employee",
+        description="Create a new employee.",
+        operation_id="create_employee",
+        request=EmployeeCreateSerializer,
+        responses={201: EmployeeDetailSerializer},
+    ),
+)
 class EmployeeListCreateAPIView(APIView):
     """
     API view for listing employees and creating new employees.
@@ -63,6 +81,34 @@ class EmployeeListCreateAPIView(APIView):
         )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Employees"],
+        summary="Retrieve Employee",
+        operation_id="retrieve_employee",
+        responses=EmployeeDetailSerializer,
+    ),
+    put=extend_schema(
+        tags=["Employees"],
+        summary="Update Employee",
+        operation_id="update_employee",
+        request=EmployeeUpdateSerializer,
+        responses=EmployeeDetailSerializer,
+    ),
+    patch=extend_schema(
+        tags=["Employees"],
+        summary="Partial Update Employee",
+        operation_id="partial_update_employee",
+        request=EmployeeUpdateSerializer,
+        responses=EmployeeDetailSerializer,
+    ),
+    delete=extend_schema(
+        tags=["Employees"],
+        summary="Soft Delete Employee",
+        operation_id="delete_employee",
+        responses={204: None},
+    ),
+)
 class EmployeeRetrieveUpdateDestroyAPIView(APIView):
     """
     API view for retrieving, updating and soft deleting an employee.
@@ -180,6 +226,16 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
         )
 
 
+@extend_schema_view(
+    patch=extend_schema(
+        tags=["Employees"],
+        summary="Update Employee Status",
+        description="Update the employment status of an employee.",
+        operation_id="update_employee_status",
+        request=EmployeeStatusUpdateSerializer,
+        responses=EmployeeDetailSerializer,
+    ),
+)
 class EmployeeStatusAPIView(APIView):
     """
     API view for updating employee status.
