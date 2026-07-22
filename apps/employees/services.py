@@ -119,6 +119,7 @@ class EmployeeService:
     def update_employee(employee, validated_data):
         old_role = employee.role
         old_department = employee.department
+        old_status = employee.status
 
         updatable_fields = [
             "first_name",
@@ -160,7 +161,6 @@ class EmployeeService:
         """
         Update an employee's status and perform all related business actions.
         """
-
         old_status = employee.status
         new_status = validated_data["status"]
 
@@ -188,14 +188,7 @@ class EmployeeService:
 
     @classmethod
     def _handle_active_status(cls, employee, old_status):
-        """
-        Handle ACTIVE status.
-        """
-
         employee.user.is_active = True
-
-        if old_status == EmployeeStatus.RESIGNED:
-            employee.resignation_date = None
 
     @classmethod
     def _handle_on_leave_status(cls, employee, old_status):
@@ -218,7 +211,6 @@ class EmployeeService:
         """
         Handle RESIGNED status.
         """
-
         employee.user.is_active = False
 
         if employee.resignation_date is None:
@@ -252,16 +244,26 @@ class EmployeeService:
 
     @classmethod
     @transaction.atomic
-    def transfer_employee(cls, employee_id):
-        """
-        Transfer an employee to a new department and/or reporting manager.
-        """
+    def transfer_employee(
+        cls,
+        employee_id,
+        new_department,
+        reporting_to=None,
+    ):
 
         employee = Employee.objects.get(id=employee_id)
 
-        validate_department_transfer(employee)
+        validate_department_transfer(
+            employee,
+            new_department,
+        )
+
+        employee.department = new_department
+
+        if reporting_to is not None:
+            employee.reporting_to = reporting_to
 
         employee.save()
 
         return employee
-    
+        

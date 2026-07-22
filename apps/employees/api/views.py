@@ -11,6 +11,7 @@ from apps.employees.api.serializers import (
 )
 from apps.employees.models import Employee
 from apps.employees.services import EmployeeService
+from rest_framework.permissions import IsAuthenticated
 
 
 @extend_schema_view(
@@ -34,6 +35,7 @@ class EmployeeListCreateAPIView(APIView):
     """
     API view for listing employees and creating new employees.
     """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         """
@@ -113,6 +115,7 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
     """
     API view for retrieving, updating and soft deleting an employee.
     """
+    permission_classes = [IsAuthenticated]
 
     @staticmethod
     def get_employee(employee_id):
@@ -240,7 +243,8 @@ class EmployeeStatusAPIView(APIView):
     """
     API view for updating employee status.
     """
-
+    permission_classes = [IsAuthenticated]
+    
     @staticmethod
     def get_employee(employee_id):
         """
