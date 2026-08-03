@@ -12,6 +12,9 @@ class DepartmentAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "code",
+        "head",
+        "location",
+        "budget",
         "is_active",
         "created_at",
     )
@@ -23,11 +26,18 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     list_filter = (
         "is_active",
+        "location",
     )
 
     ordering = (
         "name",
     )
+
+    readonly_fields = (
+        "created_at",
+    )
+
+    list_per_page = 20
 
 
 @admin.register(Designation)
@@ -40,6 +50,7 @@ class DesignationAdmin(admin.ModelAdmin):
         "name",
         "is_active",
         "created_at",
+        "updated_at",
     )
 
     search_fields = (
@@ -54,6 +65,13 @@ class DesignationAdmin(admin.ModelAdmin):
         "name",
     )
 
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    list_per_page = 20
+
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
@@ -65,11 +83,13 @@ class EmployeeAdmin(admin.ModelAdmin):
         "employee_code",
         "first_name",
         "last_name",
+        "email",
         "department",
         "designation",
         "employment_type",
         "role",
         "status",
+        "reporting_to",
         "date_of_joining",
     )
 
@@ -87,10 +107,19 @@ class EmployeeAdmin(admin.ModelAdmin):
         "employment_type",
         "role",
         "status",
+        "date_of_joining",
     )
 
     ordering = (
         "employee_code",
     )
+
+    readonly_fields = (
+        "employee_code",
+        "created_at",
+        "updated_at",
+    )
+
+    date_hierarchy = "date_of_joining"
 
     list_per_page = 20
