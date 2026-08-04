@@ -4,15 +4,24 @@ from apps.core.models import TimeStampedActiveModel
 
 from .choices import (
     PermissionAction,
-    PermissionModule,
     PermissionEffect,
+    PermissionModule,
 )
 
+from .managers import (
+    EmployeePermissionOverrideManager,
+    EmployeeRoleManager,
+    PermissionManager,
+    RoleManager,
+    RolePermissionManager,
+)
 
 class Permission(TimeStampedActiveModel):
     """
     Represents a single atomic permission that can be assigned to system roles.
     """
+
+    objects = PermissionManager()
 
     code = models.CharField(
         max_length=100,
@@ -62,6 +71,8 @@ class Role(TimeStampedActiveModel):
     Represents a collection of permissions that can be assigned to employees.
     """
 
+    objects = RoleManager()
+
     code = models.CharField(
         max_length=100,
         unique=True,
@@ -95,11 +106,13 @@ class Role(TimeStampedActiveModel):
     def __str__(self):
         return self.name
 
+
 class RolePermission(TimeStampedActiveModel):
     """
-    Maps permissions to roles and defines the default permissions
-    inherited by every employee assigned to that role.
+    Maps permissions to roles and defines the default permissions inherited by every employee assigned to that role.
     """
+
+    objects = RolePermissionManager()
 
     role = models.ForeignKey(
         "Role",
@@ -135,10 +148,13 @@ class RolePermission(TimeStampedActiveModel):
     def __str__(self):
         return f"{self.role.code} → {self.permission.code}"
 
+
 class EmployeeRole(TimeStampedActiveModel):
     """
-    Assigns roles to employees.
+    Assigns authorization roles to employees.
     """
+
+    objects = EmployeeRoleManager()
 
     employee = models.ForeignKey(
         "employees.Employee",
@@ -200,10 +216,13 @@ class EmployeeRole(TimeStampedActiveModel):
     def __str__(self):
         return f"{self.employee} → {self.role}"
 
+
 class EmployeePermissionOverride(TimeStampedActiveModel):
     """
-    Overrides permissions granted through roles for a specific employee.
+    Overrides role-based permissions for a specific employee.
     """
+
+    objects = EmployeePermissionOverrideManager()
 
     employee = models.ForeignKey(
         "employees.Employee",
