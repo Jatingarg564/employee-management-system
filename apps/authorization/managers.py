@@ -1,10 +1,16 @@
 from django.db import models
-from django.utils import timezone
 
 from apps.authorization.choices import PermissionEffect
 
 
+# ==========================================================
+# Permission QuerySet & Manager
+# ==========================================================
+
 class PermissionQuerySet(models.QuerySet):
+    """
+    Custom queryset for Permission model.
+    """
 
     def active(self):
         return self.filter(
@@ -23,6 +29,9 @@ class PermissionQuerySet(models.QuerySet):
 
 
 class PermissionManager(models.Manager):
+    """
+    Custom manager for Permission model.
+    """
 
     def get_queryset(self):
         return PermissionQuerySet(
@@ -44,7 +53,14 @@ class PermissionManager(models.Manager):
         )
 
 
+# ==========================================================
+# Role QuerySet & Manager
+# ==========================================================
+
 class RoleQuerySet(models.QuerySet):
+    """
+    Custom queryset for Role model.
+    """
 
     def active(self):
         return self.filter(
@@ -52,17 +68,20 @@ class RoleQuerySet(models.QuerySet):
         )
 
     def system_roles(self):
-        return self.filter(
+        return self.active().filter(
             is_system_role=True,
         )
 
     def custom_roles(self):
-        return self.filter(
+        return self.active().filter(
             is_system_role=False,
         )
 
 
 class RoleManager(models.Manager):
+    """
+    Custom manager for Role model.
+    """
 
     def get_queryset(self):
         return RoleQuerySet(
@@ -80,7 +99,14 @@ class RoleManager(models.Manager):
         return self.get_queryset().custom_roles()
 
 
+# ==========================================================
+# RolePermission QuerySet & Manager
+# ==========================================================
+
 class RolePermissionQuerySet(models.QuerySet):
+    """
+    Custom queryset for RolePermission model.
+    """
 
     def active(self):
         return self.filter(
@@ -99,6 +125,9 @@ class RolePermissionQuerySet(models.QuerySet):
 
 
 class RolePermissionManager(models.Manager):
+    """
+    Custom manager for RolePermission model.
+    """
 
     def get_queryset(self):
         return RolePermissionQuerySet(
@@ -120,46 +149,40 @@ class RolePermissionManager(models.Manager):
         )
 
 
+# ==========================================================
+# EmployeeRole QuerySet & Manager
+# ==========================================================
+
 class EmployeeRoleQuerySet(models.QuerySet):
+    """
+    Custom queryset for EmployeeRole model.
+    """
 
     def active(self):
         return self.filter(
             is_active=True,
         )
 
-    def current(self):
-        return self.active().filter(
-            models.Q(
-                expires_at__isnull=True,
-            )
-            |
-            models.Q(
-                expires_at__gt=timezone.now(),
-            )
-        )
-
-    def expired(self):
-        return self.active().filter(
-            expires_at__lte=timezone.now(),
-        )
-
     def primary(self):
-        return self.current().filter(
+        return self.active().filter(
             is_primary=True,
         )
 
     def for_employee(self, employee):
-        return self.current().filter(
+        return self.active().filter(
             employee=employee,
         )
 
     def for_role(self, role):
-        return self.current().filter(
+        return self.active().filter(
             role=role,
         )
 
 
 class EmployeeRoleManager(models.Manager):
+    """
+    Custom manager for EmployeeRole model.
+    """
 
     def get_queryset(self):
         return EmployeeRoleQuerySet(
@@ -169,12 +192,6 @@ class EmployeeRoleManager(models.Manager):
 
     def active(self):
         return self.get_queryset().active()
-
-    def current(self):
-        return self.get_queryset().current()
-
-    def expired(self):
-        return self.get_queryset().expired()
 
     def primary(self):
         return self.get_queryset().primary()
@@ -190,46 +207,40 @@ class EmployeeRoleManager(models.Manager):
         )
 
 
+# ==========================================================
+# EmployeePermissionOverride QuerySet & Manager
+# ==========================================================
+
 class EmployeePermissionOverrideQuerySet(models.QuerySet):
+    """
+    Custom queryset for EmployeePermissionOverride model.
+    """
 
     def active(self):
         return self.filter(
             is_active=True,
         )
 
-    def current(self):
-        return self.active().filter(
-            models.Q(
-                expires_at__isnull=True,
-            )
-            |
-            models.Q(
-                expires_at__gt=timezone.now(),
-            )
-        )
-
-    def expired(self):
-        return self.active().filter(
-            expires_at__lte=timezone.now(),
-        )
-
     def allow(self):
-        return self.current().filter(
+        return self.active().filter(
             effect=PermissionEffect.ALLOW,
         )
 
     def deny(self):
-        return self.current().filter(
+        return self.active().filter(
             effect=PermissionEffect.DENY,
         )
 
     def for_employee(self, employee):
-        return self.current().filter(
+        return self.active().filter(
             employee=employee,
         )
 
 
 class EmployeePermissionOverrideManager(models.Manager):
+    """
+    Custom manager for EmployeePermissionOverride model.
+    """
 
     def get_queryset(self):
         return EmployeePermissionOverrideQuerySet(
@@ -239,12 +250,6 @@ class EmployeePermissionOverrideManager(models.Manager):
 
     def active(self):
         return self.get_queryset().active()
-
-    def current(self):
-        return self.get_queryset().current()
-
-    def expired(self):
-        return self.get_queryset().expired()
 
     def allow(self):
         return self.get_queryset().allow()

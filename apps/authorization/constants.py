@@ -1,29 +1,35 @@
 """
 Authorization module constants.
 
-This file contains business constants used throughout the
+This module contains business constants shared across the
 authorization system.
 
 NOTE:
-Do NOT place database choices here.
+Do not define model choices here.
 Use choices.py for model field choices.
 """
 
 # ==========================================================
-# Default System Roles
+# System Role Codes
 # ==========================================================
 
-ADMIN_ROLE = "Admin"
-HR_ROLE = "HR"
-MANAGER_ROLE = "Manager"
-EMPLOYEE_ROLE = "Employee"
+SUPER_ADMIN_ROLE_CODE = "SUPER_ADMIN"
+
+SYSTEM_ADMIN_ROLE_CODE = "SYSTEM_ADMIN"
+
+HR_ROLE_CODE = "HR"
+
+MANAGER_ROLE_CODE = "MANAGER"
+
+EMPLOYEE_ROLE_CODE = "EMPLOYEE"
 
 
 DEFAULT_SYSTEM_ROLES = (
-    ADMIN_ROLE,
-    HR_ROLE,
-    MANAGER_ROLE,
-    EMPLOYEE_ROLE,
+    SUPER_ADMIN_ROLE_CODE,
+    SYSTEM_ADMIN_ROLE_CODE,
+    HR_ROLE_CODE,
+    MANAGER_ROLE_CODE,
+    EMPLOYEE_ROLE_CODE,
 )
 
 
@@ -32,30 +38,68 @@ DEFAULT_SYSTEM_ROLES = (
 # ==========================================================
 
 PROTECTED_ROLES = (
-    ADMIN_ROLE,
+    SUPER_ADMIN_ROLE_CODE,
+    SYSTEM_ADMIN_ROLE_CODE,
 )
 
 
 # ==========================================================
-# Reserved Permission Prefix
+# System Role Configuration
+# ==========================================================
+
+SYSTEM_ROLE_CONFIGURATION = {
+
+    SUPER_ADMIN_ROLE_CODE: {
+        "protected": True,
+        "mandatory_permissions": {
+            "authorization.manage",
+            "role.manage",
+            "permission.manage",
+        },
+    },
+
+    SYSTEM_ADMIN_ROLE_CODE: {
+        "protected": True,
+        "mandatory_permissions": {
+            "authorization.manage",
+            "role.manage",
+            "permission.manage",
+        },
+    },
+
+    HR_ROLE_CODE: {
+        "protected": False,
+        "mandatory_permissions": set(),
+    },
+
+    MANAGER_ROLE_CODE: {
+        "protected": False,
+        "mandatory_permissions": set(),
+    },
+
+    EMPLOYEE_ROLE_CODE: {
+        "protected": False,
+        "mandatory_permissions": set(),
+    },
+}
+
+
+# ==========================================================
+# Permission Naming
 # ==========================================================
 
 PERMISSION_SEPARATOR = "."
-
-
-# ==========================================================
-# Default Permission Naming Format
-# ==========================================================
-
 PERMISSION_CODE_FORMAT = "{module}.{action}"
 
 
 # ==========================================================
-# Override Types
+# Reserved Permission Namespaces
 # ==========================================================
 
-GRANT_PERMISSION = True
-REVOKE_PERMISSION = False
+RESERVED_PERMISSION_PREFIXES = (
+    "system.",
+    "internal.",
+)
 
 
 # ==========================================================
@@ -64,6 +108,17 @@ REVOKE_PERMISSION = False
 
 ROLE_ASSIGNED = "Role assigned"
 ROLE_REMOVED = "Role removed"
-
 PERMISSION_GRANTED = "Permission granted"
 PERMISSION_REVOKED = "Permission revoked"
+
+# ==========================================================
+# Cache Keys
+# ==========================================================
+
+PERMISSION_CACHE_KEY = (
+    "employee_permissions:{employee_id}"
+)
+
+ROLE_CACHE_KEY = (
+    "employee_roles:{employee_id}"
+)
