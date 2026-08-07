@@ -17,6 +17,11 @@ class PermissionQuerySet(models.QuerySet):
             is_active=True,
         )
 
+    def by_code(self, code):
+        return self.filter(
+            code=code,
+        )
+
     def by_module(self, module):
         return self.filter(
             module=module,
@@ -41,6 +46,11 @@ class PermissionManager(models.Manager):
 
     def active(self):
         return self.get_queryset().active()
+
+    def by_code(self, code):
+        return self.get_queryset().by_code(
+            code,
+        )
 
     def by_module(self, module):
         return self.get_queryset().by_module(
@@ -67,6 +77,11 @@ class RoleQuerySet(models.QuerySet):
             is_active=True,
         )
 
+    def by_code(self, code):
+        return self.filter(
+            code=code,
+        )
+
     def system_roles(self):
         return self.active().filter(
             is_system_role=True,
@@ -91,6 +106,11 @@ class RoleManager(models.Manager):
 
     def active(self):
         return self.get_queryset().active()
+
+    def by_code(self, code):
+        return self.get_queryset().by_code(
+            code,
+        )
 
     def system_roles(self):
         return self.get_queryset().system_roles()
@@ -173,6 +193,11 @@ class EmployeeRoleQuerySet(models.QuerySet):
             employee=employee,
         )
 
+    def primary_for_employee(self, employee):
+        return self.primary().filter(
+            employee=employee,
+        )
+
     def for_role(self, role):
         return self.active().filter(
             role=role,
@@ -198,6 +223,11 @@ class EmployeeRoleManager(models.Manager):
 
     def for_employee(self, employee):
         return self.get_queryset().for_employee(
+            employee,
+        )
+
+    def primary_for_employee(self, employee):
+        return self.get_queryset().primary_for_employee(
             employee,
         )
 
@@ -236,6 +266,11 @@ class EmployeePermissionOverrideQuerySet(models.QuerySet):
             employee=employee,
         )
 
+    def for_permission(self, permission):
+        return self.active().filter(
+            permission=permission,
+        )
+
 
 class EmployeePermissionOverrideManager(models.Manager):
     """
@@ -260,4 +295,9 @@ class EmployeePermissionOverrideManager(models.Manager):
     def for_employee(self, employee):
         return self.get_queryset().for_employee(
             employee,
+        )
+
+    def for_permission(self, permission):
+        return self.get_queryset().for_permission(
+            permission,
         )

@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-
+from apps.employees.models import Employee
 from django.core.exceptions import ValidationError
 
 from apps.authorization.choices import PermissionEffect
@@ -16,7 +16,6 @@ from apps.authorization.engine import (
 from .constants import (
     PERMISSION_CODE_FORMAT,
     PROTECTED_ROLES,
-    PROTECTED_PERMISSIONS,
     RESERVED_PERMISSION_PREFIXES,
     SYSTEM_ROLE_CONFIGURATION,
 )
@@ -34,45 +33,50 @@ from .models import (
 # ==========================================================
 
 def get_system_role_configuration(
-    role: Role,
-) -> dict:
+    role_code: str,
+) -> dict[str, object]:
     """
     Return the configuration associated with a system role.
     """
 
     return SYSTEM_ROLE_CONFIGURATION.get(
-        role.code,
+        role_code,
         {},
     )
 
 
-def get_mandatory_permissions(
-    role: Role,
+def get_required_permissions(
+    role_code: str,
 ) -> set[str]:
     """
-    Return the mandatory permission codes required by a role.
+    Retrieve the required permissions for a system role.
     """
 
-    return get_system_role_configuration(
-        role,
-    ).get(
-        "mandatory_permissions",
-        set(),
+    configuration = get_system_role_configuration(
+        role_code,
+    )
+
+    return configuration.get(
+        "required_permissions",
+        set[str](),
     )
 
 
 def is_protected_role(
-    role: Role,
+    role_code: str,
 ) -> bool:
     """
-    Determine whether the supplied role is protected.
+    Determine whether a role is protected.
     """
 
-    return (
-        role.code
-        in PROTECTED_ROLES
+    configuration = get_system_role_configuration(
+        role_code,
     )
 
+    return configuration.get(
+        "is_protected",
+        False,
+    )
 
 # ==========================================================
 # Permission Validators
@@ -207,22 +211,18 @@ def validate_permission_deletion(
 
     for role_code in PROTECTED_ROLES:
 
-        mandatory_permissions = (
-            SYSTEM_ROLE_CONFIGURATION[
-                role_code
-            ][
-                "mandatory_permissions"
-            ]
+        required_permissions = get_required_permissions(
+            role_code,
         )
 
-        if permission.code in mandatory_permissions:
+        if permission.code in required_permissions:
 
             raise ValidationError(
                 "Mandatory system permissions cannot be deleted.",
             )
 
 
-def validate_permission_not_assigned(
+def validate_permission_not_assigned_to_any_role(
     permission: Permission,
 ) -> None:
     """
@@ -343,7 +343,7 @@ def validate_role_deletion(
     """
 
     if is_protected_role(
-        role,
+        role.code,
     ):
 
         raise ValidationError(
@@ -360,7 +360,7 @@ def validate_system_role_modification(
     """
 
     if is_protected_role(
-        role,
+        role.code,
     ):
 
         raise ValidationError(
@@ -459,15 +459,15 @@ def validate_mandatory_permission_removal(
     """
 
     if not is_protected_role(
-        role,
+        role.code,
     ):
         return
 
-    mandatory_permissions = get_mandatory_permissions(
-        role,
+    required_permissions = get_required_permissions(
+        role.code,
     )
 
-    if permission.code in mandatory_permissions:
+    if permission.code in required_permissions:
 
         raise ValidationError(
             "Mandatory permissions cannot be removed from this role.",
@@ -484,12 +484,12 @@ def validate_mandatory_permission_set(
     """
 
     if not is_protected_role(
-        role,
+        role.code,
     ):
         return
 
-    mandatory_permissions = get_mandatory_permissions(
-        role,
+    required_permissions = get_required_permissions(
+        role.code,
     )
 
     incoming_permission_codes = {
@@ -498,7 +498,7 @@ def validate_mandatory_permission_set(
     }
 
     missing_permissions = (
-        mandatory_permissions
+        required_permissions
         - incoming_permission_codes
     )
 
@@ -551,7 +551,7 @@ def validate_assignable_permissions(
 # ==========================================================
 
 def validate_duplicate_employee_role(
-    employee,
+    employee: Employee,
     role: Role,
 ) -> None:
     """
@@ -570,7 +570,7 @@ def validate_duplicate_employee_role(
 
 
 def validate_employee_role_exists(
-    employee,
+    employee: Employee,
     role: Role,
 ) -> None:
     """
@@ -589,7 +589,7 @@ def validate_employee_role_exists(
 
 
 def validate_primary_role_assignment(
-    employee,
+    employee: Employee,
     employee_role: EmployeeRole | None = None,
 ) -> None:
     """
@@ -646,7 +646,7 @@ def validate_primary_role_removal(
 
 
 def validate_role_assignment(
-    employee,
+    employee: Employee,
     role: Role,
 ) -> None:
     """
@@ -665,7 +665,7 @@ def validate_role_assignment(
 
 
 def validate_role_assigner(
-    assigned_by,
+    assigned_by: Employee | None,
 ) -> None:
     """
     Validate that the assigning employee
@@ -730,7 +730,7 @@ def validate_employee_role_deletion(
 # ==========================================================
 
 def validate_duplicate_permission_override(
-    employee,
+    employee: Employee,
     permission: Permission,
 ) -> None:
     """
@@ -748,7 +748,7 @@ def validate_duplicate_permission_override(
         )
 
 def validate_permission_override_exists(
-    employee,
+    employee: Employee,
     permission: Permission,
 ) -> None:
     """
@@ -765,7 +765,7 @@ def validate_permission_override_exists(
             "Permission override does not exist.",
         )
 
-def validate_override_permission(
+def validate_override_permission_is_active(
     permission: Permission,
 ) -> None:
     """
@@ -778,7 +778,7 @@ def validate_override_permission(
     )
 
 def validate_override_assigner(
-    granted_by,
+    granted_by: Employee | None,
 ) -> None:
     """
     Validate that the granting employee
@@ -855,7 +855,7 @@ def validate_permission_override_deletion(
 # ==========================================================
 
 def validate_employee_permission(
-    employee,
+    employee: Employee,
     permission_code: str,
 ) -> None:
     """
@@ -873,8 +873,8 @@ def validate_employee_permission(
         )
 
 def validate_employee_permissions(
-    employee,
-    permission_codes,
+    employee: Employee,
+    permission_codes: Iterable[str],
 ) -> None:
     """
     Validate that the employee possesses
@@ -891,8 +891,8 @@ def validate_employee_permissions(
         )
 
 def validate_any_permission(
-    employee,
-    permission_codes,
+    employee: Employee,
+    permission_codes: Iterable[str],
 ) -> None:
     """
     Validate that the employee possesses
@@ -909,7 +909,7 @@ def validate_any_permission(
         )
 
 def validate_module_access(
-    employee,
+    employee: Employee,
     module: str,
 ) -> None:
     """
@@ -927,7 +927,7 @@ def validate_module_access(
         )
 
 def validate_action_access(
-    employee,
+    employee: Employee,
     module: str,
     action: str,
 ) -> None:
@@ -947,7 +947,7 @@ def validate_action_access(
         )
 
 def validate_super_admin(
-    employee,
+    employee: Employee,
 ) -> None:
     """
     Validate that the employee is
@@ -963,7 +963,7 @@ def validate_super_admin(
         )
 
 def validate_system_admin(
-    employee,
+    employee: Employee,
 ) -> None:
     """
     Validate that the employee is

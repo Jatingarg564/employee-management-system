@@ -50,8 +50,8 @@ PROTECTED_ROLES = (
 SYSTEM_ROLE_CONFIGURATION = {
 
     SUPER_ADMIN_ROLE_CODE: {
-        "protected": True,
-        "mandatory_permissions": {
+        "is_protected": True,
+        "required_permissions": {
             "authorization.manage",
             "role.manage",
             "permission.manage",
@@ -59,8 +59,8 @@ SYSTEM_ROLE_CONFIGURATION = {
     },
 
     SYSTEM_ADMIN_ROLE_CODE: {
-        "protected": True,
-        "mandatory_permissions": {
+        "is_protected": True,
+        "required_permissions": {
             "authorization.manage",
             "role.manage",
             "permission.manage",
@@ -68,19 +68,20 @@ SYSTEM_ROLE_CONFIGURATION = {
     },
 
     HR_ROLE_CODE: {
-        "protected": False,
-        "mandatory_permissions": set(),
+        "is_protected": False,
+        "required_permissions": set(),
     },
 
     MANAGER_ROLE_CODE: {
-        "protected": False,
-        "mandatory_permissions": set(),
+        "is_protected": False,
+        "required_permissions": set(),
     },
 
     EMPLOYEE_ROLE_CODE: {
-        "protected": False,
-        "mandatory_permissions": set(),
+        "is_protected": False,
+        "required_permissions": set(),
     },
+
 }
 
 
@@ -89,6 +90,7 @@ SYSTEM_ROLE_CONFIGURATION = {
 # ==========================================================
 
 PERMISSION_SEPARATOR = "."
+
 PERMISSION_CODE_FORMAT = "{module}.{action}"
 
 
@@ -103,13 +105,17 @@ RESERVED_PERMISSION_PREFIXES = (
 
 
 # ==========================================================
-# Audit Messages
+# Audit Event Messages
 # ==========================================================
 
 ROLE_ASSIGNED = "Role assigned"
+
 ROLE_REMOVED = "Role removed"
+
 PERMISSION_GRANTED = "Permission granted"
+
 PERMISSION_REVOKED = "Permission revoked"
+
 
 # ==========================================================
 # Cache Keys
@@ -121,4 +127,8 @@ PERMISSION_CACHE_KEY = (
 
 ROLE_CACHE_KEY = (
     "employee_roles:{employee_id}"
+)
+
+EFFECTIVE_PERMISSION_CACHE_KEY = (
+    "effective_permissions:{employee_id}"
 )

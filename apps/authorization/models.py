@@ -32,7 +32,7 @@ class Permission(TimeStampedActiveModel):
     )
 
     name = models.CharField(
-        max_length=100,
+        max_length=150,
         unique=True,
         help_text="Human-readable permission name.",
     )

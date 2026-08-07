@@ -1,5 +1,7 @@
 from django.db.models import QuerySet
 
+from apps.employees.models import Employee
+
 from .models import (
     EmployeePermissionOverride,
     EmployeeRole,
@@ -13,7 +15,9 @@ from .models import (
 # Permission Selectors
 # ==========================================================
 
-def get_permission(permission_id: int) -> Permission:
+def get_permission(
+    permission_id: int,
+) -> Permission:
     """
     Retrieve a permission by its primary key.
     """
@@ -23,13 +27,17 @@ def get_permission(permission_id: int) -> Permission:
     )
 
 
-def get_permission_by_code(code: str) -> Permission:
+def get_permission_by_code(
+    code: str,
+) -> Permission:
     """
-    Retrieve a permission using its unique permission code.
+    Retrieve a permission using its unique code.
     """
 
-    return Permission.objects.get(
-        code=code,
+    return (
+        Permission.objects
+        .by_code(code)
+        .get()
     )
 
 
@@ -65,7 +73,7 @@ def get_permissions_by_action(
     action: str,
 ) -> QuerySet[Permission]:
     """
-    Retrieve all permissions for a specific action.
+    Retrieve all permissions belonging to an action.
     """
 
     return Permission.objects.by_action(
@@ -73,21 +81,27 @@ def get_permissions_by_action(
     )
 
 
-def permission_exists(code: str) -> bool:
+def permission_exists(
+    code: str,
+) -> bool:
     """
     Determine whether a permission exists.
     """
 
-    return Permission.objects.filter(
-        code=code,
-    ).exists()
+    return (
+        Permission.objects
+        .by_code(code)
+        .exists()
+    )
 
 
 # ==========================================================
 # Role Selectors
 # ==========================================================
 
-def get_role(role_id: int) -> Role:
+def get_role(
+    role_id: int,
+) -> Role:
     """
     Retrieve a role by its primary key.
     """
@@ -97,13 +111,17 @@ def get_role(role_id: int) -> Role:
     )
 
 
-def get_role_by_code(code: str) -> Role:
+def get_role_by_code(
+    code: str,
+) -> Role:
     """
     Retrieve a role using its unique code.
     """
 
-    return Role.objects.get(
-        code=code,
+    return (
+        Role.objects
+        .by_code(code)
+        .get()
     )
 
 
@@ -139,14 +157,18 @@ def get_custom_roles() -> QuerySet[Role]:
     return Role.objects.custom_roles()
 
 
-def role_exists(code: str) -> bool:
+def role_exists(
+    code: str,
+) -> bool:
     """
     Determine whether a role exists.
     """
 
-    return Role.objects.filter(
-        code=code,
-    ).exists()
+    return (
+        Role.objects
+        .by_code(code)
+        .exists()
+    )
 
 
 # ==========================================================
@@ -186,15 +208,33 @@ def get_role_permission_codes(
     )
 
 
+def role_has_permission(
+    role: Role,
+    permission: Permission,
+) -> bool:
+    """
+    Determine whether a role has a permission assigned.
+    """
+
+    return (
+        RolePermission.objects
+        .for_role(role)
+        .filter(
+            permission=permission,
+        )
+        .exists()
+    )
+
+
 # ==========================================================
 # Employee Role Selectors
 # ==========================================================
 
 def get_employee_roles(
-    employee,
+    employee: Employee,
 ) -> QuerySet[EmployeeRole]:
     """
-    Retrieve all current role assignments for an employee.
+    Retrieve all active role assignments for an employee.
     """
 
     return (
@@ -202,37 +242,52 @@ def get_employee_roles(
         .for_employee(employee)
         .select_related(
             "role",
+            "assigned_by",
         )
     )
 
 
-def get_primary_role(
-    employee,
-):
+def get_primary_role_assignment(
+    employee: Employee,
+) -> EmployeeRole | None:
     """
-    Retrieve an employee's primary role.
+    Retrieve an employee's primary role assignment.
     """
 
-    assignment = (
+    return (
         EmployeeRole.objects
-        .primary()
-        .filter(
-            employee=employee,
-        )
+        .primary_for_employee(employee)
         .select_related(
             "role",
+            "assigned_by",
         )
         .first()
     )
 
-    return assignment.role if assignment else None
+
+def employee_has_role(
+    employee: Employee,
+    role: Role,
+) -> bool:
+    """
+    Determine whether an employee has a role assigned.
+    """
+
+    return (
+        EmployeeRole.objects
+        .for_employee(employee)
+        .filter(
+            role=role,
+        )
+        .exists()
+    )
 
 
 def get_role_employees(
-    role,
+    role: Role,
 ) -> QuerySet[EmployeeRole]:
     """
-    Retrieve employees assigned to a role.
+    Retrieve all employees assigned to a role.
     """
 
     return (
@@ -249,10 +304,10 @@ def get_role_employees(
 # ==========================================================
 
 def get_employee_permission_overrides(
-    employee,
+    employee: Employee,
 ) -> QuerySet[EmployeePermissionOverride]:
     """
-    Retrieve current permission overrides assigned to an employee.
+    Retrieve all permission overrides assigned to an employee.
     """
 
     return (
@@ -260,5 +315,24 @@ def get_employee_permission_overrides(
         .for_employee(employee)
         .select_related(
             "permission",
+            "granted_by",
         )
+    )
+
+
+def employee_has_permission_override(
+    employee: Employee,
+    permission: Permission,
+) -> bool:
+    """
+    Determine whether an employee has a permission override.
+    """
+
+    return (
+        EmployeePermissionOverride.objects
+        .for_employee(employee)
+        .filter(
+            permission=permission,
+        )
+        .exists()
     )
