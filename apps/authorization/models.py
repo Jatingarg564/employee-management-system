@@ -172,17 +172,17 @@ class RolePermission(TimeStampedActiveModel):
                     "role",
                     "is_active",
                 ),
-                name="idx_role_permission_role_active",
+                name="idx_rp_role_active",
             ),
             models.Index(
                 fields=(
                     "permission",
                     "is_active",
                 ),
-                name="idx_role_permission_permission_active",
+                name="idx_rp_perm_active",
             ),
         ]
-
+        
     def __str__(self):
         return (
             f"{self.role.code} → "
