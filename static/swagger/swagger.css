@@ -1,0 +1,1179 @@
+/* ============================================================
+   EMS Swagger UI Theme
+   Light Mode + Dark Mode
+   ============================================================ */
+
+
+/* ============================================================
+   DARK THEME INITIALIZATION
+   ============================================================ */
+
+/*
+ * Temporary class applied by swagger_ui.html before
+ * swagger.js finishes initializing the theme.
+ *
+ * This prevents a visible white flash when Dark Mode
+ * was selected previously.
+ */
+
+html.swagger-dark-pending {
+    background: #0d1117 !important;
+}
+
+html.swagger-dark-pending body {
+    background: #0d1117 !important;
+}
+
+
+/* ============================================================
+   THEME TOGGLE BUTTON
+   ============================================================ */
+
+.swagger-theme-toggle {
+    position: absolute;
+
+    top: 15px;
+    right: 20px;
+
+    z-index: 99999;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 7px 12px;
+
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+
+    background: #ffffff;
+    color: #24292f;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.12);
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+/* ------------------------------------------------------------
+   Light mode button
+   ------------------------------------------------------------ */
+
+body:not(.swagger-dark) .swagger-theme-toggle {
+    background: #ffffff;
+    color: #24292f;
+
+    border-color: #d0d7de;
+
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+
+body:not(.swagger-dark)
+.swagger-theme-toggle:hover {
+
+    background: #f6f8fa;
+
+    border-color: #afb8c1;
+}
+
+
+/* ------------------------------------------------------------
+   Dark mode button
+   ------------------------------------------------------------ */
+
+html.swagger-dark .swagger-theme-toggle {
+    background: #21262d;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+
+html.swagger-dark
+.swagger-theme-toggle:hover {
+
+    background: #30363d;
+
+    border-color: #484f58;
+}
+
+
+/* ------------------------------------------------------------
+   Button focus
+   ------------------------------------------------------------ */
+
+.swagger-theme-toggle:focus-visible {
+    outline: 2px solid #58a6ff;
+    outline-offset: 2px;
+}
+
+
+/* ------------------------------------------------------------
+   Button icon
+   ------------------------------------------------------------ */
+
+.swagger-theme-toggle-icon {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 16px;
+    height: 16px;
+
+    font-size: 14px;
+
+    line-height: 1;
+}
+
+
+/* ------------------------------------------------------------
+   Button text
+   ------------------------------------------------------------ */
+
+.swagger-theme-toggle-text {
+    line-height: 1;
+}
+
+
+/* ============================================================
+   DARK THEME
+   Activated using:
+
+   html.swagger-dark
+   ============================================================ */
+
+
+/* ============================================================
+   GLOBAL
+   ============================================================ */
+
+html.swagger-dark,
+html.swagger-dark body {
+    background: #0d1117 !important;
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark .swagger-ui {
+    background: #0d1117;
+
+    color: #c9d1d9;
+}
+
+
+/* ============================================================
+   API INFORMATION
+   ============================================================ */
+
+html.swagger-dark .swagger-ui .info {
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark .swagger-ui .info .title {
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark .swagger-ui .info p,
+html.swagger-dark .swagger-ui .info li {
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark .swagger-ui .info a {
+    color: #58a6ff;
+}
+
+
+html.swagger-dark .swagger-ui .info a:hover {
+    color: #79c0ff;
+}
+
+
+/* ============================================================
+   MAIN HEADINGS
+   ============================================================ */
+
+html.swagger-dark .swagger-ui h1,
+html.swagger-dark .swagger-ui h2,
+html.swagger-dark .swagger-ui h3,
+html.swagger-dark .swagger-ui h4,
+html.swagger-dark .swagger-ui h5,
+html.swagger-dark .swagger-ui h6 {
+    color: #f0f6fc;
+}
+
+
+/* ============================================================
+   TAGS / SECTIONS
+   ============================================================ */
+
+html.swagger-dark .swagger-ui .opblock-tag {
+    color: #f0f6fc;
+
+    border-bottom-color: #30363d;
+}
+
+
+html.swagger-dark .swagger-ui .opblock-tag:hover {
+    background: #161b22;
+}
+
+
+/* ============================================================
+   ENDPOINT BLOCKS
+   ============================================================ */
+
+html.swagger-dark .swagger-ui .opblock {
+    background: #161b22;
+
+    border-color: #30363d;
+
+    box-shadow: none;
+}
+
+
+/* Endpoint summary */
+
+html.swagger-dark
+.swagger-ui
+.opblock
+.opblock-summary {
+
+    border-color: #30363d;
+
+    color: #c9d1d9;
+}
+
+
+/* HTTP method */
+
+html.swagger-dark
+.swagger-ui
+.opblock
+.opblock-summary-method {
+
+    color: #ffffff;
+}
+
+
+/* Path */
+
+html.swagger-dark
+.swagger-ui
+.opblock-summary-path {
+
+    color: #c9d1d9;
+}
+
+
+/* Description */
+
+html.swagger-dark
+.swagger-ui
+.opblock-summary-description {
+
+    color: #8b949e;
+}
+
+
+/* Endpoint body */
+
+html.swagger-dark
+.swagger-ui
+.opblock-body {
+
+    background: #0d1117;
+}
+
+
+/* Description wrapper */
+
+html.swagger-dark
+.swagger-ui
+.opblock-description-wrapper {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.opblock-external-docs-wrapper {
+
+    color: #c9d1d9;
+}
+
+
+/* ============================================================
+   OPERATION SECTION HEADER
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.opblock-section-header {
+
+    background: #161b22;
+
+    box-shadow: none;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.opblock-section-header h4 {
+
+    color: #f0f6fc;
+}
+
+
+/* ============================================================
+   PARAMETERS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.parameter__name {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.parameter__type {
+
+    color: #79c0ff;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.parameter__in {
+
+    color: #8b949e;
+}
+
+
+/* ============================================================
+   GENERAL TEXT
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+p,
+html.swagger-dark
+.swagger-ui
+label,
+html.swagger-dark
+.swagger-ui
+td,
+html.swagger-dark
+.swagger-ui
+th {
+
+    color: #c9d1d9;
+}
+
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+table
+thead
+tr
+td,
+html.swagger-dark
+.swagger-ui
+table
+thead
+tr
+th {
+
+    color: #f0f6fc;
+
+    border-bottom-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+table
+tbody
+tr
+td {
+
+    color: #c9d1d9;
+
+    border-bottom-color: #30363d;
+}
+
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+input[type="text"],
+html.swagger-dark
+.swagger-ui
+input[type="password"],
+html.swagger-dark
+.swagger-ui
+input[type="email"],
+html.swagger-dark
+.swagger-ui
+input[type="number"],
+html.swagger-dark
+.swagger-ui
+textarea,
+html.swagger-dark
+.swagger-ui
+select {
+
+    background: #0d1117 !important;
+
+    color: #f0f6fc !important;
+
+    border-color: #30363d !important;
+}
+
+
+html.swagger-dark
+.swagger-ui
+input::placeholder,
+html.swagger-dark
+.swagger-ui
+textarea::placeholder {
+
+    color: #8b949e;
+}
+
+
+/* Input focus */
+
+html.swagger-dark
+.swagger-ui
+input:focus,
+html.swagger-dark
+.swagger-ui
+textarea:focus,
+html.swagger-dark
+.swagger-ui
+select:focus {
+
+    border-color: #58a6ff !important;
+
+    outline: none;
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.btn {
+
+    background: #21262d;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.btn:hover {
+
+    background: #30363d;
+}
+
+
+/* ============================================================
+   EXECUTE BUTTON
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.btn.execute {
+
+    background: #238636;
+
+    border-color: #238636;
+
+    color: #ffffff;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.btn.execute:hover {
+
+    background: #2ea043;
+}
+
+
+/* ============================================================
+   AUTHORIZE / SCHEME CONTAINER
+   ============================================================ */
+
+/*
+ * This fixes the large white section that was visible
+ * in the screenshot while Dark Mode was active.
+ */
+
+html.swagger-dark
+.swagger-ui
+.scheme-container {
+
+    background: #161b22 !important;
+
+    border-bottom: 1px solid #30363d;
+
+    box-shadow: none;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.scheme-container
+.schemes {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.scheme-container
+label {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.scheme-container
+select {
+
+    background: #0d1117;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+/* ============================================================
+   AUTHORIZE BUTTON
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.authorize {
+
+    color: #3fb950;
+
+    border-color: #3fb950;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.authorize:hover {
+
+    background: rgba(46, 160, 67, 0.1);
+}
+
+
+html.swagger-dark
+.swagger-ui
+.authorize
+svg {
+
+    fill: #3fb950;
+}
+
+
+/* ============================================================
+   UNAUTHORIZE BUTTON
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.btn.authorize {
+
+    color: #3fb950;
+
+    border-color: #3fb950;
+}
+
+
+/* ============================================================
+   MODELS / SCHEMAS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+section.models {
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+section.models
+h4 {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.model-container {
+
+    background: #161b22;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.model {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.model-title {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.model-box {
+
+    background: #161b22;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.model-box-control {
+
+    color: #c9d1d9;
+}
+
+
+/* ============================================================
+   SCHEMA PROPERTIES
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.prop-type {
+
+    color: #79c0ff;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.prop-format {
+
+    color: #8b949e;
+}
+
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.highlight-code {
+
+    background: #010409 !important;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.microlight {
+
+    color: #e6edf3;
+}
+
+
+/* ============================================================
+   MARKDOWN CONTENT
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+p {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h1,
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h2,
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h3,
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h4,
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h5,
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+h6 {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+code {
+
+    background: #21262d;
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.renderedMarkdown
+blockquote {
+
+    color: #8b949e;
+
+    border-left-color: #30363d;
+}
+
+
+/* ============================================================
+   RESPONSES
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.responses-inner {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.response-col_status {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.response-col_description {
+
+    color: #c9d1d9;
+}
+
+
+/* ============================================================
+   RESPONSE TABLE
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.responses-table {
+
+    background: #0d1117;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.responses-table
+.live-responses {
+
+    background: #0d1117;
+}
+
+
+/* ============================================================
+   TRY IT OUT
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.try-out__btn {
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.try-out__btn:hover {
+
+    background: #30363d;
+}
+
+
+/* ============================================================
+   SERVERS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.servers > label {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.servers
+select {
+
+    background: #0d1117;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+/* ============================================================
+   SEARCH / FILTER
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.filter
+.operation-filter-input {
+
+    background: #0d1117;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.filter
+.operation-filter-input::placeholder {
+
+    color: #8b949e;
+}
+
+
+/* ============================================================
+   AUTHORIZATION MODAL
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.dialog-ux
+.modal-ux {
+
+    background: #161b22;
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.dialog-ux
+.modal-ux-header {
+
+    border-bottom-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.dialog-ux
+.modal-ux-header
+h3 {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.auth-container {
+
+    background: #161b22;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.auth-container
+input {
+
+    background: #0d1117;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+/* ============================================================
+   LINKS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+a {
+
+    color: #58a6ff;
+}
+
+
+html.swagger-dark
+.swagger-ui
+a:hover {
+
+    color: #79c0ff;
+}
+
+
+/* ============================================================
+   ALERTS / NOTIFICATIONS
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.errors-wrapper {
+
+    color: #f0f6fc;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.errors-wrapper
+.errors {
+
+    background: #3d1f1f;
+
+    border-color: #f85149;
+
+    color: #f0f6fc;
+}
+
+
+/* ============================================================
+   REQUIRED / VALIDATION
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.required {
+
+    color: #f85149;
+}
+
+
+/* ============================================================
+   LOCK / AUTH ICONS
+   ============================================================ */
+
+/*
+html.swagger-dark
+.swagger-ui
+svg {
+    Do not globally force SVG colors.
+    Swagger uses different colors for HTTP methods,
+    authorization icons and controls.
+}
+*/
+
+
+/* ============================================================
+   OPERATION FILTER / SEARCH
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.operation-filter-input {
+
+    background: #0d1117;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+
+html.swagger-dark
+.swagger-ui
+.pagination-container {
+
+    color: #c9d1d9;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.pagination-container
+button {
+
+    background: #21262d;
+
+    color: #f0f6fc;
+
+    border-color: #30363d;
+}
+
+
+html.swagger-dark
+.swagger-ui
+.pagination-container
+button:hover {
+
+    background: #30363d;
+}
+
+
+/* ============================================================
+   SCROLLBARS
+   ============================================================ */
+
+html.swagger-dark
+::-webkit-scrollbar {
+
+    width: 10px;
+
+    height: 10px;
+}
+
+
+html.swagger-dark
+::-webkit-scrollbar-track {
+
+    background: #0d1117;
+}
+
+
+html.swagger-dark
+::-webkit-scrollbar-thumb {
+
+    background: #30363d;
+
+    border-radius: 5px;
+}
+
+
+html.swagger-dark
+::-webkit-scrollbar-thumb:hover {
+
+    background: #484f58;
+}
+
+
+/* ============================================================
+   RESPONSIVE TOGGLE BUTTON
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    .swagger-theme-toggle {
+
+        top: 10px;
+
+        right: 10px;
+
+        padding: 7px 9px;
+    }
+
+
+    .swagger-theme-toggle-text {
+
+        display: none;
+    }
+}
