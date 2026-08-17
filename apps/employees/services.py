@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import transaction
-from apps.employees.models import Employee
+from apps.employees.models import Department, Employee
 from django.utils import timezone
 from apps.employees.choices import EmployeeStatus
 from apps.employees.validators import (
@@ -267,3 +267,10 @@ class EmployeeService:
 
         return employee
         
+class DepartmentService:
+    def create_department(validated_data):
+        """
+        Create a new department.
+        """
+        department = Department.objects.create(**validated_data)
+        return department

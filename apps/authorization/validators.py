@@ -192,6 +192,10 @@ def validate_permission_deactivation(
 ) -> None:
     """
     Validate that the permission can be deactivated.
+
+    A permission must be active before deactivation.
+    Mandatory permissions required by protected system
+    roles cannot be deactivated.
     """
 
     if not permission.is_active:
@@ -200,13 +204,25 @@ def validate_permission_deactivation(
             "Permission is already inactive.",
         )
 
+    for role_code in PROTECTED_ROLES:
+
+        required_permissions = get_required_permissions(
+            role_code,
+        )
+
+        if permission.code in required_permissions:
+
+            raise ValidationError(
+                "Mandatory system permissions cannot be deactivated.",
+            )
+
 
 def validate_permission_deletion(
     permission: Permission,
 ) -> None:
     """
     Validate that a mandatory system permission
-    cannot be deleted.
+    cannot be physically deleted.
     """
 
     for role_code in PROTECTED_ROLES:
@@ -221,7 +237,7 @@ def validate_permission_deletion(
                 "Mandatory system permissions cannot be deleted.",
             )
 
-
+        
 def validate_permission_not_assigned_to_any_role(
     permission: Permission,
 ) -> None:
@@ -238,7 +254,7 @@ def validate_permission_not_assigned_to_any_role(
             "Permission is assigned to one or more roles.",
         )
 
-
+    
 def validate_permission_is_active(
     permission: Permission,
 ) -> None:

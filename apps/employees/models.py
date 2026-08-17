@@ -3,14 +3,70 @@ from django.contrib.auth.models import User
 from apps.employees.choices import EmploymentType, EmploymentRole, EmployeeStatus
 
 
+from django.db import models
+
+
 class Department(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=10, unique=True)
-    head = models.ForeignKey("Employee", on_delete=models.SET_NULL, null=True, blank=True, related_name="headed_departments")
-    budget = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    location = models.CharField(max_length=200, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        db_index=True,
+    )
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+    )
+
+    head = models.ForeignKey(
+        "Employee",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="headed_departments",
+    )
+
+    budget = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+    )
+
+    class Meta:
+        ordering = (
+            "name",
+        )
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    budget__gte=0,
+                ),
+                name="department_budget_non_negative",
+            ),
+        ]
+
+        verbose_name = "Department"
+        verbose_name_plural = "Departments"
 
     def __str__(self):
         return self.name
