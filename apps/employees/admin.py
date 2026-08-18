@@ -12,11 +12,13 @@ class DepartmentAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "code",
+        "manager",
         "head",
         "location",
         "budget",
         "is_active",
         "created_at",
+        "updated_at",
     )
 
     search_fields = (
@@ -35,10 +37,10 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "created_at",
+        "updated_at",
     )
 
     list_per_page = 20
-
 
 @admin.register(Designation)
 class DesignationAdmin(admin.ModelAdmin):

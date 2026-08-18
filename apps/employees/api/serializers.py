@@ -9,7 +9,7 @@ from apps.employees.models import (
 
 from apps.employees.validators import (
     validate_age,
-    validate_department_head,
+    validate_department_leadership_employee,
     validate_department_transfer,
     validate_email_uniqueness,
     validate_joining_date,
@@ -213,39 +213,55 @@ class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
 
 class DepartmentSerializer(serializers.ModelSerializer):
     """
-    Serializer for Department model.
+    Serializer for creating and updating Department instances.
     """
 
     class Meta:
         model = Department
+
         fields = (
+            "id",
             "name",
             "code",
+            "manager",
             "head",
             "budget",
             "location",
             "is_active",
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
         )
 
     def validate(self, attrs):
         """
-        Perform custom validations for department creation and updates.
+        Validate department manager and head assignments.
         """
 
-        department = self.instance or Department(**attrs)
+        manager = attrs.get(
+            "manager",
+            self.instance.manager if self.instance else None,
+        )
 
         head = attrs.get(
             "head",
-            department.head,
+            self.instance.head if self.instance else None,
         )
 
-        validate_department_head(
-            department,
+        validate_department_leadership_employee(
+            manager,
+        )
+
+        validate_department_leadership_employee(
             head,
         )
 
         return attrs
-
 
 class DesignationSerializer(serializers.ModelSerializer):
     """

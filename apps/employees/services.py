@@ -1,12 +1,21 @@
 from django.contrib.auth.models import User
 from django.db import transaction
-from apps.employees.models import Department, Employee
 from django.utils import timezone
-from apps.employees.choices import EmployeeStatus
-from apps.employees.validators import (
-    validate_department_transfer, 
-    validate_status_transition
+
+from apps.employees.choices import (
+    EmployeeStatus,
 )
+from apps.employees.models import (
+    Department,
+    Employee,
+)
+from apps.employees.validators import (
+    validate_department_transfer,
+    validate_status_transition,
+    validate_department_leadership_integrity,
+)
+
+
 class EmployeeService:
     """
     Business logic for employee operations.
@@ -70,17 +79,15 @@ class EmployeeService:
         """
         Create a new employee and its corresponding user account.
         """
-        # Extract authentication credentials
+
         username = validated_data.pop("username")
         password = validated_data.pop("password")
 
-        # Extract employee information
         role = validated_data["role"]
         department = validated_data["department"]
         joining_date = validated_data["date_of_joining"]
         joining_year = joining_date.year
 
-        # Create Django user
         user = User.objects.create_user(
             username=username,
             password=password,
@@ -89,13 +96,11 @@ class EmployeeService:
             last_name=validated_data["last_name"],
         )
 
-        # Determine employee sequence
         sequence = EmployeeService.get_next_employee_sequence(
             role=role,
             department=department,
         )
 
-        # Generate employee code
         employee_code = EmployeeService.generate_employee_code(
             role=role,
             department=department,
@@ -103,25 +108,50 @@ class EmployeeService:
             sequence=sequence,
         )
 
-        # Prepare employee data
         validated_data["user"] = user
         validated_data["employee_code"] = employee_code
 
-        # Create employee
         employee = Employee.objects.create(
-            **validated_data
+            **validated_data,
         )
 
         return employee
 
-    @staticmethod
+    @classmethod
     @transaction.atomic
-    def update_employee(employee, validated_data):
+    def update_employee(
+        cls,
+        employee,
+        validated_data,
+    ):
+        """
+        Update employee information.
+
+        Before applying changes, ensure that changes to role or
+        department do not invalidate any department leadership
+        assignments held by the employee.
+        """
+
         old_role = employee.role
         old_department = employee.department
-        old_status = employee.status
 
-        updatable_fields = [
+        new_role = validated_data.get(
+            "role",
+            employee.role,
+        )
+
+        new_department = validated_data.get(
+            "department",
+            employee.department,
+        )
+
+        validate_department_leadership_integrity(
+            employee=employee,
+            new_role=new_role,
+            new_department=new_department,
+        )
+
+        updatable_fields = (
             "first_name",
             "last_name",
             "phone_number",
@@ -133,18 +163,25 @@ class EmployeeService:
             "employment_type",
             "role",
             "salary",
-        ]
+        )
 
         for field in updatable_fields:
             if field in validated_data:
-                setattr(employee, field, validated_data[field])
+                setattr(
+                    employee,
+                    field,
+                    validated_data[field],
+                )
 
-        if old_role != employee.role or old_department != employee.department:
-            sequence = EmployeeService.get_employee_sequence(
-                employee.employee_code
+        if (
+            old_role != employee.role
+            or old_department != employee.department
+        ):
+            sequence = cls.get_employee_sequence(
+                employee.employee_code,
             )
 
-            employee.employee_code = EmployeeService.generate_employee_code(
+            employee.employee_code = cls.generate_employee_code(
                 role=employee.role,
                 department=employee.department,
                 joining_year=employee.date_of_joining.year,
@@ -154,17 +191,32 @@ class EmployeeService:
         employee.save()
 
         return employee
-    
+
     @classmethod
     @transaction.atomic
-    def update_employee_status(cls, employee, validated_data):
+    def update_employee_status(
+        cls,
+        employee,
+        validated_data,
+    ):
         """
-        Update an employee's status and perform all related business actions.
+        Update an employee's status and perform all related
+        business actions.
         """
+
         old_status = employee.status
+
         new_status = validated_data["status"]
 
-        validate_status_transition(employee, new_status)
+        validate_status_transition(
+            employee,
+            new_status,
+        )
+
+        validate_department_leadership_integrity(
+            employee=employee,
+            new_status=new_status,
+        )
 
         employee.status = new_status
 
@@ -176,10 +228,15 @@ class EmployeeService:
             EmployeeStatus.TERMINATED: cls._handle_terminated_status,
         }
 
-        handler = status_handlers.get(new_status)
+        handler = status_handlers.get(
+            new_status,
+        )
 
         if handler:
-            handler(employee, old_status)
+            handler(
+                employee,
+                old_status,
+            )
 
         employee.user.save()
         employee.save()
@@ -187,11 +244,23 @@ class EmployeeService:
         return employee
 
     @classmethod
-    def _handle_active_status(cls, employee, old_status):
+    def _handle_active_status(
+        cls,
+        employee,
+        old_status,
+    ):
+        """
+        Handle ACTIVE status.
+        """
+
         employee.user.is_active = True
 
     @classmethod
-    def _handle_on_leave_status(cls, employee, old_status):
+    def _handle_on_leave_status(
+        cls,
+        employee,
+        old_status,
+    ):
         """
         Handle ON_LEAVE status.
         """
@@ -199,7 +268,11 @@ class EmployeeService:
         employee.user.is_active = True
 
     @classmethod
-    def _handle_inactive_status(cls, employee, old_status):
+    def _handle_inactive_status(
+        cls,
+        employee,
+        old_status,
+    ):
         """
         Handle INACTIVE status.
         """
@@ -207,17 +280,26 @@ class EmployeeService:
         employee.user.is_active = False
 
     @classmethod
-    def _handle_resigned_status(cls, employee, old_status):
+    def _handle_resigned_status(
+        cls,
+        employee,
+        old_status,
+    ):
         """
         Handle RESIGNED status.
         """
+
         employee.user.is_active = False
 
         if employee.resignation_date is None:
             employee.resignation_date = timezone.now().date()
 
     @classmethod
-    def _handle_terminated_status(cls, employee, old_status):
+    def _handle_terminated_status(
+        cls,
+        employee,
+        old_status,
+    ):
         """
         Handle TERMINATED status.
         """
@@ -229,10 +311,21 @@ class EmployeeService:
 
     @classmethod
     @transaction.atomic
-    def soft_delete_employee(cls, employee):
+    def soft_delete_employee(
+        cls,
+        employee,
+    ):
         """
         Soft delete an employee by deactivating the account.
+
+        An employee assigned to department leadership cannot be
+        deactivated without first resolving those assignments.
         """
+
+        validate_department_leadership_integrity(
+            employee=employee,
+            new_status=EmployeeStatus.INACTIVE,
+        )
 
         employee.status = EmployeeStatus.INACTIVE
         employee.user.is_active = False
@@ -250,12 +343,22 @@ class EmployeeService:
         new_department,
         reporting_to=None,
     ):
+        """
+        Transfer an employee to another department.
+        """
 
-        employee = Employee.objects.get(id=employee_id)
+        employee = Employee.objects.get(
+            id=employee_id,
+        )
 
         validate_department_transfer(
             employee,
             new_department,
+        )
+
+        validate_department_leadership_integrity(
+            employee=employee,
+            new_department=new_department,
         )
 
         employee.department = new_department
@@ -266,11 +369,72 @@ class EmployeeService:
         employee.save()
 
         return employee
-        
+
+
 class DepartmentService:
+    """
+    Business logic for department operations.
+    """
+
+    @staticmethod
+    @transaction.atomic
     def create_department(validated_data):
         """
         Create a new department.
         """
-        department = Department.objects.create(**validated_data)
+
+        department = Department.objects.create(
+            **validated_data,
+        )
+
+        return department
+
+    @staticmethod
+    @transaction.atomic
+    def update_department(
+        department,
+        validated_data,
+    ):
+        """
+        Update an existing department.
+        """
+
+        updatable_fields = [
+            "name",
+            "code",
+            "manager",
+            "head",
+            "budget",
+            "location",
+            "is_active",
+        ]
+
+        for field in updatable_fields:
+            if field in validated_data:
+                setattr(
+                    department,
+                    field,
+                    validated_data[field],
+                )
+
+        department.save()
+
+        return department
+
+    @staticmethod
+    @transaction.atomic
+    def deactivate_department(department):
+        """
+        Soft deactivate a department.
+        """
+
+        department.is_active = False
+
+        department.save(
+            update_fields=[
+                "is_active",
+                "updated_at",
+            ],
+        )
+
         return department
