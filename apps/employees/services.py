@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
+from jsonschema import ValidationError
 
 from apps.employees.choices import (
     EmployeeStatus,
@@ -73,9 +74,9 @@ class EmployeeService:
             f"{sequence:04d}"
         )
 
-    @staticmethod
+    @classmethod
     @transaction.atomic
-    def create_employee(validated_data):
+    def create_employee(cls, validated_data):
         """
         Create a new employee and its corresponding user account.
         """
@@ -96,17 +97,29 @@ class EmployeeService:
             last_name=validated_data["last_name"],
         )
 
-        sequence = EmployeeService.get_next_employee_sequence(
+        sequence = cls.get_next_employee_sequence(
             role=role,
             department=department,
         )
 
-        employee_code = EmployeeService.generate_employee_code(
+        employee_code = cls.generate_employee_code(
             role=role,
             department=department,
             joining_year=joining_year,
             sequence=sequence,
         )
+
+        if Employee.objects.filter(
+            employee_code=employee_code
+        ).exists():
+            raise ValidationError(
+                {
+                    "employee_code": (
+                        "An employee with this generated employee code "
+                        "already exists."
+                    )
+                }
+            )
 
         validated_data["user"] = user
         validated_data["employee_code"] = employee_code

@@ -173,6 +173,15 @@ def validate_department_leadership_employee(employee):
             "department leadership position."
         )
 
+def validate_department_budget(budget):
+    """
+    Validate that a department budget is not negative.
+    """
+
+    if budget < 0:
+        raise ValidationError(
+            "Department budget cannot be negative."
+        )
 
 def validate_department_manager(manager):
     """

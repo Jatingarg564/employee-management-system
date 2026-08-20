@@ -53,7 +53,7 @@ urlpatterns = [
 
     # Applications
     path(
-        "api/",
+        "api/accounts/",
         include("apps.accounts.api.urls"),
     ),
     path(

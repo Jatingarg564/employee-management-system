@@ -343,29 +343,39 @@ class DepartmentListCreateAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def post(self, request, *args, **kwargs):
-        """
-        Create a new department.
-        """
+    def post(self, request):
 
-        serializer = DepartmentSerializer(
+        print("\n========== EMPLOYEE CREATE DEBUG ==========")
+
+        print("REQUEST DATA:")
+        print(request.data)
+
+        print("REQUEST DATA TYPE:")
+        print(type(request.data))
+
+        serializer = EmployeeCreateSerializer(
             data=request.data,
         )
 
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        if not serializer.is_valid():
 
-        department = DepartmentService.create_department(
+            print("SERIALIZER ERRORS:")
+            print(serializer.errors)
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        print("VALIDATED DATA:")
+        print(serializer.validated_data)
+
+        employee = EmployeeService.create_employee(
             serializer.validated_data,
         )
 
-        response_serializer = DepartmentSerializer(
-            department,
-        )
-
         return Response(
-            response_serializer.data,
+            EmployeeDetailSerializer(employee).data,
             status=status.HTTP_201_CREATED,
         )
 

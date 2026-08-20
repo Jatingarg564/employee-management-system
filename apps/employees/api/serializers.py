@@ -1,3 +1,4 @@
+import attrs
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
@@ -9,7 +10,10 @@ from apps.employees.models import (
 
 from apps.employees.validators import (
     validate_age,
+    validate_department_budget,
     validate_department_leadership_employee,
+    validate_department_leadership_integrity,
+    validate_department_head,
     validate_department_transfer,
     validate_email_uniqueness,
     validate_joining_date,
@@ -151,9 +155,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        """
-        Perform custom validations for employee updates.
-        """
 
         salary = attrs.get(
             "salary",
@@ -163,6 +164,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         reporting_to = attrs.get(
             "reporting_to",
             self.instance.reporting_to,
+        )
+
+        new_role = attrs.get(
+            "role",
+            self.instance.role,
         )
 
         validate_salary(
@@ -183,6 +189,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         validate_reporting_hierarchy(
             self.instance,
             reporting_to,
+        )
+
+        validate_department_leadership_integrity(
+            employee=self.instance,
+            new_role=new_role,
         )
 
         return attrs
@@ -212,9 +223,6 @@ class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating and updating Department instances.
-    """
 
     class Meta:
         model = Department
@@ -239,9 +247,6 @@ class DepartmentSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        """
-        Validate department manager and head assignments.
-        """
 
         manager = attrs.get(
             "manager",
@@ -253,15 +258,25 @@ class DepartmentSerializer(serializers.ModelSerializer):
             self.instance.head if self.instance else None,
         )
 
+        budget = attrs.get(
+            "budget",
+            self.instance.budget if self.instance else 0,
+        )
+
         validate_department_leadership_employee(
             manager,
         )
 
-        validate_department_leadership_employee(
+        validate_department_head(
             head,
         )
 
+        validate_department_budget(
+            budget,
+        )
+
         return attrs
+
 
 class DesignationSerializer(serializers.ModelSerializer):
     """
