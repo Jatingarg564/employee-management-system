@@ -1,8 +1,11 @@
-from django.core.exceptions import ValidationError
 from django.utils import timezone
+
 from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
+
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from apps.employees.choices import (
     EmployeeStatus,
@@ -287,8 +290,12 @@ def validate_department_transfer(
         )
 
     if employee.department == new_department:
-        raise ValidationError(
-            "Employee is already assigned to this department."
+        raise serializers.ValidationError(
+            {
+                "department": (
+                    "Employee is already assigned to this department."
+                )
+            }
         )
 
 

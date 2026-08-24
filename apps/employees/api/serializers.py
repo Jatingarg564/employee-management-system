@@ -1,7 +1,7 @@
 import attrs
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-
+from apps.employees.choices import EmploymentRole
 from apps.employees.models import (
     Department,
     Designation,
@@ -71,6 +71,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         style={"input_type": "password"},
+    )
+
+    role = serializers.ChoiceField(
+        choices=EmploymentRole.choices,
+        required=True,
+        allow_null=False,
     )
 
     class Meta:

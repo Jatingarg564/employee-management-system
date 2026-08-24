@@ -343,39 +343,29 @@ class DepartmentListCreateAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new department.
+        """
 
-        print("\n========== EMPLOYEE CREATE DEBUG ==========")
-
-        print("REQUEST DATA:")
-        print(request.data)
-
-        print("REQUEST DATA TYPE:")
-        print(type(request.data))
-
-        serializer = EmployeeCreateSerializer(
+        serializer = DepartmentSerializer(
             data=request.data,
         )
 
-        if not serializer.is_valid():
+        serializer.is_valid(
+            raise_exception=True,
+        )
 
-            print("SERIALIZER ERRORS:")
-            print(serializer.errors)
-
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        print("VALIDATED DATA:")
-        print(serializer.validated_data)
-
-        employee = EmployeeService.create_employee(
+        department = DepartmentService.create_department(
             serializer.validated_data,
         )
 
+        response_serializer = DepartmentSerializer(
+            department,
+        )
+
         return Response(
-            EmployeeDetailSerializer(employee).data,
+            response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -411,6 +401,8 @@ class DepartmentListCreateAPIView(APIView):
         responses={204: None},
     ),
 )
+
+
 class DepartmentRetrieveUpdateDestroyAPIView(APIView):
     """
     API view for retrieving, updating and deactivating departments.
@@ -528,72 +520,3 @@ class DepartmentRetrieveUpdateDestroyAPIView(APIView):
         return Response(
             status=status.HTTP_204_NO_CONTENT,
         )
-
-class DepartmentService:
-    """
-    Business logic for department operations.
-    """
-
-    @staticmethod
-    @transaction.atomic
-    def create_department(validated_data):
-        """
-        Create a new department.
-        """
-
-        department = Department.objects.create(
-            **validated_data,
-        )
-
-        return department
-
-    @staticmethod
-    @transaction.atomic
-    def update_department(
-        department,
-        validated_data,
-    ):
-        """
-        Update an existing department.
-        """
-
-        updatable_fields = [
-            "name",
-            "code",
-            "manager",
-            "head",
-            "budget",
-            "location",
-            "is_active",
-        ]
-
-        for field in updatable_fields:
-            if field in validated_data:
-                setattr(
-                    department,
-                    field,
-                    validated_data[field],
-                )
-
-        department.save()
-
-        return department
-
-    @staticmethod
-    @transaction.atomic
-    def deactivate_department(department):
-        """
-        Soft deactivate a department.
-        """
-
-        department.is_active = False
-
-        department.save(
-            update_fields=[
-                "is_active",
-                "updated_at",
-            ],
-        )
-
-        return department
-

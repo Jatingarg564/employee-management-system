@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
-from jsonschema import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.employees.choices import (
     EmployeeStatus,
@@ -159,10 +159,12 @@ class EmployeeService:
         )
 
         validate_department_leadership_integrity(
-            employee=employee,
-            new_role=new_role,
-            new_department=new_department,
-        )
+            employee,
+            new_role=validated_data.get(
+                "role",
+                employee.role,
+            ),
+)
 
         updatable_fields = (
             "first_name",
@@ -439,7 +441,24 @@ class DepartmentService:
     def deactivate_department(department):
         """
         Soft deactivate a department.
+
+        A department cannot be deactivated while it has
+        active employees.
         """
+
+        active_employees = department.employees.filter(
+            status=EmployeeStatus.ACTIVE,
+        )
+
+        if active_employees.exists():
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Department cannot be deactivated "
+                        "because it has active employees."
+                    )
+                }
+            )
 
         department.is_active = False
 
