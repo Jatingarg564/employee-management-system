@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -235,31 +235,37 @@ class EmployeeValidatorTest(TestCase):
     # DEPARTMENT HEAD
     # ----------------------------------------------------------
 
-    def test_same_department_head_should_pass(self):
+    def test_department_head_should_pass(self):
+
+        self.employee.role = EmploymentRole.MANAGER
+        self.employee.status = EmployeeStatus.ACTIVE
+        self.employee.save()
 
         validate_department_head(
-            self.department,
             self.employee
         )
 
-    def test_different_department_head_should_raise_error(self):
 
-        self.employee.department = self.department2
+    def test_non_manager_department_head_should_raise_error(self):
+
+        self.employee.role = EmploymentRole.EMPLOYEE
+        self.employee.status = EmployeeStatus.ACTIVE
+        self.employee.save()
 
         with self.assertRaises(ValidationError):
             validate_department_head(
-                self.department,
                 self.employee
             )
 
+
     def test_inactive_department_head_should_raise_error(self):
 
-        self.employee.department = self.department
+        self.employee.role = EmploymentRole.MANAGER
         self.employee.status = EmployeeStatus.INACTIVE
+        self.employee.save()
 
         with self.assertRaises(ValidationError):
             validate_department_head(
-                self.department,
                 self.employee
             )
 

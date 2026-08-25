@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.test import TestCase
 
 from apps.employees.choices import (

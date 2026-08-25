@@ -12,6 +12,8 @@ from apps.employees.models import (
 )
 from apps.employees.validators import (
     validate_department_transfer,
+    validate_reporting_hierarchy,
+    validate_reporting_manager,
     validate_status_transition,
     validate_department_leadership_integrity,
 )
@@ -363,7 +365,10 @@ class EmployeeService:
         reporting_to=None,
     ):
         """
-        Transfer an employee to another department.
+        Transfer an employee to a different department.
+
+        Validates the department transfer before applying the change.
+        Optionally updates the employee's reporting manager.
         """
 
         employee = Employee.objects.get(
@@ -375,10 +380,16 @@ class EmployeeService:
             new_department,
         )
 
-        validate_department_leadership_integrity(
-            employee=employee,
-            new_department=new_department,
-        )
+        if reporting_to is not None:
+            validate_reporting_manager(
+                employee,
+                reporting_to,
+            )
+
+            validate_reporting_hierarchy(
+                employee,
+                reporting_to,
+            )
 
         employee.department = new_department
 

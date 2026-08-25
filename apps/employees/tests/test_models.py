@@ -62,7 +62,7 @@ class EmployeeModelTest(TestCase):
 
         self.assertEqual(
             str(self.department),
-            self.department.name,
+            "Information Technology (IT)",
         )
 
     def test_designation_str(self):
@@ -76,7 +76,9 @@ class EmployeeModelTest(TestCase):
 
         self.assertEqual(
             str(self.employee),
-            f"{self.employee.employee_code} - {self.employee.first_name} {self.employee.last_name}",
+            f"{self.employee.employee_code} - "
+            f"{self.employee.first_name} "
+            f"{self.employee.last_name}",
         )
 
     # ---------------------------------------------------------
