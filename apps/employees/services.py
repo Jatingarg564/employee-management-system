@@ -147,6 +147,7 @@ class EmployeeService:
 
         old_role = employee.role
         old_department = employee.department
+        old_joining_date = employee.date_of_joining
 
         new_role = validated_data.get(
             "role",
@@ -160,21 +161,20 @@ class EmployeeService:
 
         validate_department_leadership_integrity(
             employee,
-            new_role=validated_data.get(
-                "role",
-                employee.role,
-            ),
-)
+            new_role=new_role,
+        )
 
         updatable_fields = (
             "first_name",
             "last_name",
             "phone_number",
+            "date_of_birth",
             "address",
             "profile_photo",
             "department",
             "designation",
             "reporting_to",
+            "date_of_joining",
             "employment_type",
             "role",
             "salary",
@@ -191,6 +191,10 @@ class EmployeeService:
         if (
             old_role != employee.role
             or old_department != employee.department
+            or (
+                old_joining_date.year
+                != employee.date_of_joining.year
+            )
         ):
             sequence = cls.get_employee_sequence(
                 employee.employee_code,

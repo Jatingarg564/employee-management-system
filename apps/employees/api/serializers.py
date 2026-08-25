@@ -146,11 +146,13 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "phone_number",
+            "date_of_birth",
             "profile_photo",
             "address",
             "department",
             "designation",
             "reporting_to",
+            "date_of_joining",
             "employment_type",
             "role",
             "salary",
@@ -177,8 +179,27 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             self.instance.role,
         )
 
+        date_of_birth = attrs.get(
+            "date_of_birth",
+            self.instance.date_of_birth,
+        )
+
+        date_of_joining = attrs.get(
+            "date_of_joining",
+            self.instance.date_of_joining,
+        )
+
         validate_salary(
             salary,
+        )
+
+        validate_joining_date(
+            date_of_joining,
+        )
+
+        validate_age(
+            date_of_birth,
+            date_of_joining,
         )
 
         if "department" in attrs:
