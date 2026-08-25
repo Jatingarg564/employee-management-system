@@ -1,6 +1,7 @@
+import attrs
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-
+from apps.employees.choices import EmploymentRole
 from apps.employees.models import (
     Department,
     Designation,
@@ -9,6 +10,9 @@ from apps.employees.models import (
 
 from apps.employees.validators import (
     validate_age,
+    validate_department_budget,
+    validate_department_leadership_employee,
+    validate_department_leadership_integrity,
     validate_department_head,
     validate_department_transfer,
     validate_email_uniqueness,
@@ -67,6 +71,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         style={"input_type": "password"},
+    )
+
+    role = serializers.ChoiceField(
+        choices=EmploymentRole.choices,
+        required=True,
+        allow_null=False,
     )
 
     class Meta:
@@ -136,11 +146,13 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "phone_number",
+            "date_of_birth",
             "profile_photo",
             "address",
             "department",
             "designation",
             "reporting_to",
+            "date_of_joining",
             "employment_type",
             "role",
             "salary",
@@ -151,9 +163,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        """
-        Perform custom validations for employee updates.
-        """
 
         salary = attrs.get(
             "salary",
@@ -165,8 +174,32 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             self.instance.reporting_to,
         )
 
+        new_role = attrs.get(
+            "role",
+            self.instance.role,
+        )
+
+        date_of_birth = attrs.get(
+            "date_of_birth",
+            self.instance.date_of_birth,
+        )
+
+        date_of_joining = attrs.get(
+            "date_of_joining",
+            self.instance.date_of_joining,
+        )
+
         validate_salary(
             salary,
+        )
+
+        validate_joining_date(
+            date_of_joining,
+        )
+
+        validate_age(
+            date_of_birth,
+            date_of_joining,
         )
 
         if "department" in attrs:
@@ -183,6 +216,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         validate_reporting_hierarchy(
             self.instance,
             reporting_to,
+        )
+
+        validate_department_leadership_integrity(
+            employee=self.instance,
+            new_role=new_role,
         )
 
         return attrs
@@ -212,36 +250,56 @@ class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Department model.
-    """
 
     class Meta:
         model = Department
+
         fields = (
+            "id",
             "name",
             "code",
+            "manager",
             "head",
             "budget",
             "location",
             "is_active",
+            "created_at",
+            "updated_at",
+        )
+
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
         )
 
     def validate(self, attrs):
-        """
-        Perform custom validations for department creation and updates.
-        """
 
-        department = self.instance or Department(**attrs)
+        manager = attrs.get(
+            "manager",
+            self.instance.manager if self.instance else None,
+        )
 
         head = attrs.get(
             "head",
-            department.head,
+            self.instance.head if self.instance else None,
+        )
+
+        budget = attrs.get(
+            "budget",
+            self.instance.budget if self.instance else 0,
+        )
+
+        validate_department_leadership_employee(
+            manager,
         )
 
         validate_department_head(
-            department,
             head,
+        )
+
+        validate_department_budget(
+            budget,
         )
 
         return attrs
