@@ -14,9 +14,70 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.urls import path, include
 from django.contrib import admin
-from django.urls import path
+from drf_spectacular.views import(
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
+from rest_framework import urls
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+
+    # API Schema
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema",
+    ),
+
+    # Swagger UI
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(
+            url_name="schema"
+        ),
+        name="swagger-ui",
+    ),
+
+    # ReDoc
+    path(
+        "api/redoc/",
+        SpectacularRedocView.as_view(
+            url_name="schema"
+        ),
+        name="redoc",
+    ),
+
+    # Applications
+    path(
+        "api/accounts/",
+        include("apps.accounts.api.urls"),
+    ),
+    path(
+        "api/employees/",
+        include("apps.employees.api.urls"),
+    ),
+    path(
+        "api/attendance/",
+        include("apps.attendance.api.urls"),
+    ),
+    path(
+        "api/leaves/",
+        include("apps.leaves.api.urls"),
+    ),
+    path(
+        "api/payroll/",
+        include("apps.payroll.api.urls"),
+    ),
+    path(
+        "api/appraisal/",
+        include("apps.appraisal.api.urls"),
+    ),
+    path(
+        "api/authorization/",
+        include("apps.authorization.api.urls"),
+    ),
 ]

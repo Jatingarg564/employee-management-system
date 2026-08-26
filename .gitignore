@@ -1,27 +1,91 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
+*.so
 
+# Python cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# =========================
 # Virtual Environment
+# =========================
 venv/
 env/
+.venv/
 
+# =========================
 # Django
+# =========================
 db.sqlite3
+db.sqlite3-journal
 
-# Environment Variables
-.env
-
-# Media
+# Django media
 media/
 
-# Logs
-*.log
+# Static files (if collected)
+staticfiles/
 
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
 # IDE
+# =========================
 .vscode/
 .idea/
 
-# OS
+# =========================
+# Operating System
+# =========================
 .DS_Store
+Thumbs.db
+
+# =========================
+# Test Reports
+# =========================
+coverage.xml
+nosetests.xml
+*.cover
+
+# =========================
+# Type Checker
+# =========================
+.pyre/
+.dmypy.json
+dmypy.json
+
+# =========================
+# Build / Distribution
+# =========================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+
+
+.env

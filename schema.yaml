@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: Employee Management System API
+  version: 1.0.0
+  description: Backend APIs for the Employee Management System.
+paths:
+  /api/employees/:
+    get:
+      operationId: list_employees
+      description: Retrieve all employees.
+      summary: List Employees
+      tags:
+      - Employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+    post:
+      operationId: create_employee
+      description: Create a new employee.
+      summary: Create Employee
+      tags:
+      - Employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+  /api/employees/{employee_id}/:
+    get:
+      operationId: retrieve_employee
+      description: Retrieve a single employee.
+      summary: Retrieve Employee
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+    put:
+      operationId: update_employee
+      description: Fully update an employee.
+      summary: Update Employee
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeUpdate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+    patch:
+      operationId: partial_update_employee
+      description: Partially update an employee.
+      summary: Partial Update Employee
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+    delete:
+      operationId: delete_employee
+      description: Soft delete an employee.
+      summary: Soft Delete Employee
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Employees
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/employees/{employee_id}/status/:
+    patch:
+      operationId: update_employee_status
+      description: Update the employment status of an employee.
+      summary: Update Employee Status
+      parameters:
+      - in: path
+        name: employee_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeStatusUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeStatusUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeStatusUpdate'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDetail'
+          description: ''
+components:
+  schemas:
+    EmployeeCreate:
+      type: object
+      description: Serializer for creating Employee instances.
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone_number:
+          type: string
+          maxLength: 15
+        date_of_birth:
+          type: string
+          format: date
+        profile_photo:
+          type: string
+          format: uri
+          nullable: true
+        address:
+          type: string
+        department:
+          type: integer
+        designation:
+          type: integer
+        reporting_to:
+          type: integer
+          nullable: true
+        date_of_joining:
+          type: string
+          format: date
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+      - date_of_birth
+      - date_of_joining
+      - department
+      - designation
+      - email
+      - employment_type
+      - first_name
+      - last_name
+      - password
+      - salary
+      - username
+    EmployeeDetail:
+      type: object
+      description: Serializer for Employee model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee_code:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone_number:
+          type: string
+          maxLength: 15
+        date_of_birth:
+          type: string
+          format: date
+        department:
+          type: integer
+        designation:
+          type: integer
+        reporting_to:
+          type: integer
+          nullable: true
+        date_of_joining:
+          type: string
+          format: date
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        profile_photo:
+          type: string
+          format: uri
+          nullable: true
+        address:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date_of_birth
+      - date_of_joining
+      - department
+      - designation
+      - email
+      - employee_code
+      - employment_type
+      - first_name
+      - id
+      - last_name
+      - salary
+      - updated_at
+    EmployeeUpdate:
+      type: object
+      description: Serializer for updating employee information.
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone_number:
+          type: string
+          maxLength: 15
+        profile_photo:
+          type: string
+          format: uri
+          nullable: true
+        address:
+          type: string
+        department:
+          type: integer
+        designation:
+          type: integer
+        reporting_to:
+          type: integer
+          nullable: true
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+      - department
+      - designation
+      - employment_type
+      - first_name
+      - last_name
+      - salary
+    EmploymentTypeEnum:
+      enum:
+      - FT
+      - PT
+      - CT
+      - IN
+      type: string
+      description: |-
+        * `FT` - Full Time
+        * `PT` - Part Time
+        * `CT` - Contract
+        * `IN` - Intern
+    PatchedEmployeeStatusUpdate:
+      type: object
+      description: Serializer for updating employee status.
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    PatchedEmployeeUpdate:
+      type: object
+      description: Serializer for updating employee information.
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone_number:
+          type: string
+          maxLength: 15
+        profile_photo:
+          type: string
+          format: uri
+          nullable: true
+        address:
+          type: string
+        department:
+          type: integer
+        designation:
+          type: integer
+        reporting_to:
+          type: integer
+          nullable: true
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+    RoleEnum:
+      enum:
+      - AD
+      - HR
+      - MG
+      - EM
+      type: string
+      description: |-
+        * `AD` - Admin
+        * `HR` - HR
+        * `MG` - Manager
+        * `EM` - Employee
+    StatusEnum:
+      enum:
+      - AC
+      - IN
+      - OL
+      - TE
+      - RE
+      type: string
+      description: |-
+        * `AC` - Active
+        * `IN` - Inactive
+        * `OL` - On Leave
+        * `TE` - Terminated
+        * `RE` - Resigned
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
