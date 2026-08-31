@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from apps.accounts.api.views import (
+    AccountActivationAPIView,
     LoginAPIView,
 )
 
@@ -20,5 +21,11 @@ urlpatterns = [
         "token/refresh/",
         TokenRefreshView.as_view(),
         name="token-refresh",
+    ),
+
+    path(
+        "activate/",
+        AccountActivationAPIView.as_view(),
+        name="account-activate",
     ),
 ]

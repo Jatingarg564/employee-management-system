@@ -179,3 +179,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+RESEND_API_KEY = get_env_variable("RESEND_API_KEY")
+DEFAULT_FROM_EMAIL = get_env_variable("DEFAULT_FROM_EMAIL")
+FRONTEND_URL = get_env_variable("FRONTEND_URL")
+
