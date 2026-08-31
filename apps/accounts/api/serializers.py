@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+
 from rest_framework import serializers
 
 
@@ -44,3 +45,13 @@ class AccountActivationSerializer(serializers.Serializer):
         )
 
         return value
+
+
+class TokenValidationSerializer(serializers.Serializer):
+    """
+    Serializer for activation token validation.
+    """
+
+    token = serializers.CharField(
+        write_only=True,
+    )

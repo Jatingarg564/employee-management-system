@@ -1,11 +1,15 @@
-import resend
-
 from django.conf import settings
+
+from brevo import Brevo
+from brevo.transactional_emails import (
+    SendTransacEmailRequestSender,
+    SendTransacEmailRequestToItem,
+)
 
 
 class EmailService:
     """
-    Handles transactional emails through Resend.
+    Handles transactional email delivery through Brevo.
     """
 
     @staticmethod
@@ -20,43 +24,58 @@ class EmailService:
 
         activation_url = (
             f"{settings.FRONTEND_URL}"
-            f"/activate-account?token={verification_token}"
+            f"/activate-account"
+            f"?token={verification_token}"
         )
 
-        resend.api_key = settings.RESEND_API_KEY
+        client = Brevo(
+            api_key=settings.BREVO_API_KEY,
+        )
 
-        response = resend.Emails.send(
-            {
-                "from": settings.DEFAULT_FROM_EMAIL,
-                "to": [recipient_email],
-                "subject": "Activate your EMS employee account",
-                "html": f"""
-                    <h2>Welcome to EMS</h2>
+        response = client.transactional_emails.send_transac_email(
+            sender=SendTransacEmailRequestSender(
+                email=settings.BREVO_SENDER_EMAIL,
+                name=settings.BREVO_SENDER_NAME,
+            ),
+            to=[
+                SendTransacEmailRequestToItem(
+                    email=recipient_email,
+                    name=employee_name,
+                )
+            ],
+            subject="Activate your EMS employee account",
+            html_content=f"""
+                <html>
+                    <body>
+                        <h2>Welcome to EMS</h2>
 
-                    <p>Hello {employee_name},</p>
+                        <p>
+                            Hello {employee_name},
+                        </p>
 
-                    <p>
-                        Your employee account has been created.
-                        Please activate your account and set your
-                        password using the button below.
-                    </p>
+                        <p>
+                            Your Employee Management System
+                            account has been created.
+                        </p>
 
-                    <p>
-                        <a href="{activation_url}">
-                            Activate Account
-                        </a>
-                    </p>
+                        <p>
+                            Please activate your account
+                            and set your password.
+                        </p>
 
-                    <p>
-                        This activation link is valid for 24 hours.
-                    </p>
+                        <p>
+                            <a href="{activation_url}">
+                                Activate Account
+                            </a>
+                        </p>
 
-                    <p>
-                        If you did not expect this email,
-                        you can safely ignore it.
-                    </p>
-                """,
-            }
+                        <p>
+                            This activation link will expire
+                            after the configured verification period.
+                        </p>
+                    </body>
+                </html>
+            """,
         )
 
         return response

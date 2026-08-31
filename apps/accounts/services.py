@@ -61,19 +61,20 @@ class AccountService:
 
     VERIFICATION_TOKEN_EXPIRY_HOURS = 24
 
-    @staticmethod
-    @transaction.atomic
-    def create_verification(user):
+    @classmethod
+    def create_verification(cls, user):
         """
         Create or replace an account verification token.
         """
 
         token = secrets.token_urlsafe(32)
 
+        created_at = timezone.now()
+
         expires_at = (
-            timezone.now()
+            created_at
             + timedelta(
-                hours=AccountService.VERIFICATION_TOKEN_EXPIRY_HOURS
+                hours=cls.VERIFICATION_TOKEN_EXPIRY_HOURS,
             )
         )
 
@@ -104,31 +105,42 @@ class AccountService:
             )
         except AccountVerification.DoesNotExist:
             raise ValidationError(
-                "Invalid verification token."
+                {
+                    "code": "INVALID_TOKEN",
+                    "detail": "Invalid activation link.",
+                }
             )
 
         if verification.is_verified:
             raise ValidationError(
-                "This account has already been verified."
+                {
+                    "code": "ALREADY_VERIFIED",
+                    "detail": (
+                        "This activation link has already been used."
+                    ),
+                }
             )
 
-        if timezone.now() > verification.expires_at:
+        if timezone.now() >= verification.expires_at:
             raise ValidationError(
-                "This verification token has expired."
+                {
+                    "code": "TOKEN_EXPIRED",
+                    "detail": (
+                        "This activation link has expired."
+                    ),
+                }
             )
 
         return verification
 
-    @staticmethod
+    @classmethod
     @transaction.atomic
-    def verify_account(token, password):
+    def verify_account(cls, token, password):
         """
         Verify the account and establish the user's password.
         """
 
-        verification = AccountService.verify_token(
-            token
-        )
+        verification = cls.verify_token(token)
 
         user = verification.user
 
