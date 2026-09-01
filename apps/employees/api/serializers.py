@@ -68,11 +68,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(max_length=150)
 
-    password = serializers.CharField(
-        write_only=True,
-        style={"input_type": "password"},
-    )
-
     role = serializers.ChoiceField(
         choices=EmploymentRole.choices,
         required=True,
@@ -83,7 +78,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             "username",
-            "password",
             "first_name",
             "last_name",
             "email",
@@ -126,10 +120,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
         validate_salary(
             attrs["salary"],
-        )
-
-        validate_password(
-            password=attrs["password"],
         )
 
         return attrs
