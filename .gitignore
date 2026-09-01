@@ -27,6 +27,8 @@ env/
 # =========================
 db.sqlite3
 db.sqlite3-journal
+db.sqlite3.backup
+sqlite_data.json
 
 # Django media
 media/
@@ -85,7 +87,3 @@ dist/
 # Jupyter
 # =========================
 .ipynb_checkpoints/
-
-
-
-.env
