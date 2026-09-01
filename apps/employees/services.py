@@ -3,6 +3,9 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.services import AccountService
+from apps.accounts.email_service import EmailService
+
 from apps.employees.choices import (
     EmployeeStatus,
 )
@@ -80,11 +83,11 @@ class EmployeeService:
     @transaction.atomic
     def create_employee(cls, validated_data):
         """
-        Create a new employee and its corresponding user account.
+        Create a new employee, inactive user account,
+        verification record, and schedule an invitation email.
         """
 
         username = validated_data.pop("username")
-        password = validated_data.pop("password")
 
         role = validated_data["role"]
         department = validated_data["department"]
@@ -93,10 +96,20 @@ class EmployeeService:
 
         user = User.objects.create_user(
             username=username,
-            password=password,
             email=validated_data["email"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
+        )
+
+        user.set_unusable_password()
+
+        user.is_active = False
+
+        user.save(
+            update_fields=[
+                "password",
+                "is_active",
+            ]
         )
 
         sequence = cls.get_next_employee_sequence(
@@ -128,6 +141,21 @@ class EmployeeService:
 
         employee = Employee.objects.create(
             **validated_data,
+        )
+
+        verification = AccountService.create_verification(
+            user=user,
+        )
+
+        transaction.on_commit(
+            lambda: EmailService.send_employee_invitation(
+                recipient_email=user.email,
+                employee_name=(
+                    f"{employee.first_name} "
+                    f"{employee.last_name}"
+                ),
+                verification_token=verification.token,
+            )
         )
 
         return employee
