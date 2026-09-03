@@ -14,6 +14,7 @@ from apps.employees.validators import (
     validate_department_leadership_employee,
     validate_department_leadership_integrity,
     validate_department_head,
+    validate_department_manager,
     validate_department_transfer,
     validate_email_uniqueness,
     validate_joining_date,
@@ -259,6 +260,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
         read_only_fields = (
             "id",
+            "is_active",
             "created_at",
             "updated_at",
         )
@@ -280,7 +282,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
             self.instance.budget if self.instance else 0,
         )
 
-        validate_department_leadership_employee(
+        validate_department_manager(
             manager,
         )
 
