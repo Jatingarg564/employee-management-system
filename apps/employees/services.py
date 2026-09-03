@@ -425,7 +425,6 @@ class DepartmentService:
             "head",
             "budget",
             "location",
-            "is_active",
         ]
 
         for field in updatable_fields:
