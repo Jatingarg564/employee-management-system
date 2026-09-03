@@ -24,8 +24,7 @@ class EmailService:
 
         activation_url = (
             f"{settings.FRONTEND_URL}"
-            f"/activate-account"
-            f"?token={verification_token}"
+            f"/activate/{verification_token}"
         )
 
         client = Brevo(
