@@ -305,6 +305,7 @@ class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Designation
         fields = (
+            "id",
             "name",
             "description",
             "is_active",

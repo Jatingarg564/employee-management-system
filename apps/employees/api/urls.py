@@ -3,6 +3,7 @@ from django.urls import path
 from apps.employees.api.views import (
     DepartmentListCreateAPIView,
     DepartmentRetrieveUpdateDestroyAPIView,
+    DesignationListAPIView,
     EmployeeListCreateAPIView,
     EmployeeRetrieveUpdateDestroyAPIView,
     EmployeeStatusAPIView,
@@ -10,13 +11,20 @@ from apps.employees.api.views import (
 
 urlpatterns = [
 
+    # Designations
+    path(
+        "designations/",
+        DesignationListAPIView.as_view(),
+        name="designation-list",
+    ),
+
     # Employees
     path(
         "",
         EmployeeListCreateAPIView.as_view(),
         name="employee-list-create",
     ),
-
+    
     path(
         "<int:employee_id>/",
         EmployeeRetrieveUpdateDestroyAPIView.as_view(),

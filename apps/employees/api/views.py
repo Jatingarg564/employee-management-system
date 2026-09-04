@@ -13,12 +13,14 @@ from apps.employees.api.serializers import (
     EmployeeDetailSerializer,
     EmployeeStatusUpdateSerializer,
     EmployeeUpdateSerializer,
+    DesignationSerializer,
     DepartmentSerializer,
 )
 
 from apps.employees.models import (
     Employee,
     Department,
+    Designation,
 )
 
 from apps.employees.services import (
@@ -299,6 +301,42 @@ class EmployeeStatusAPIView(APIView):
 
         return Response(
             response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["Designations"],
+    summary="List Designations",
+    description="Retrieve all active designations.",
+    operation_id="list_designations",
+    responses=DesignationSerializer(many=True),
+)
+class DesignationListAPIView(APIView):
+    """
+    API view for listing active designations.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieve all active designations.
+        """
+
+        designations = Designation.objects.filter(
+            is_active=True,
+        ).order_by(
+            "name",
+        )
+
+        serializer = DesignationSerializer(
+            designations,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
             status=status.HTTP_200_OK,
         )
 
