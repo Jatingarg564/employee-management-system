@@ -398,4 +398,22 @@ def validate_status_transition(
                 "A resigned employee can only be reactivated "
                 "within 30 days of resignation."
             )
-    
+
+# ============================================================
+# EMPLOYEE PROFILE PHOTO VALIDATIONS
+# ============================================================
+
+def validate_profile_photo(profile_photo):
+    """
+    Validate an employee profile photo.
+
+    Profile photos are optional. When provided, the uploaded
+    image is validated and sanitized before being stored.
+    """
+
+    if profile_photo is None:
+        return None
+
+    from apps.employees.image_utils import sanitize_profile_photo
+
+    return sanitize_profile_photo(profile_photo)

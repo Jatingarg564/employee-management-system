@@ -178,6 +178,7 @@ class EmployeeService:
         old_role = employee.role
         old_department = employee.department
         old_joining_date = employee.date_of_joining
+        old_profile_photo = employee.profile_photo
 
         new_role = validated_data.get(
             "role",
@@ -238,6 +239,15 @@ class EmployeeService:
             )
 
         employee.save()
+
+        if (
+            "profile_photo" in validated_data
+            and old_profile_photo
+            and old_profile_photo.name != employee.profile_photo.name
+        ):
+            transaction.on_commit(
+                old_profile_photo.delete
+            )
 
         return employee
 

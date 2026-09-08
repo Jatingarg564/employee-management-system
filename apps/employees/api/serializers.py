@@ -18,6 +18,7 @@ from apps.employees.validators import (
     validate_department_transfer,
     validate_email_uniqueness,
     validate_joining_date,
+    validate_profile_photo,
     validate_reporting_hierarchy,
     validate_reporting_manager,
     validate_salary,
@@ -123,6 +124,11 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             attrs["salary"],
         )
 
+        if "profile_photo" in attrs:
+            attrs["profile_photo"] = validate_profile_photo(
+                attrs["profile_photo"],
+            )
+
         return attrs
 
 
@@ -130,6 +136,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating employee information.
     """
+
+    profile_photo = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Employee
@@ -154,7 +165,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-
         salary = attrs.get(
             "salary",
             self.instance.salary,
@@ -213,6 +223,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             employee=self.instance,
             new_role=new_role,
         )
+
+        if "profile_photo" in attrs:
+            attrs["profile_photo"] = validate_profile_photo(
+                attrs["profile_photo"],
+            )
 
         return attrs
 
