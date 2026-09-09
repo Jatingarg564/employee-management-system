@@ -178,7 +178,18 @@ class EmployeeService:
         old_role = employee.role
         old_department = employee.department
         old_joining_date = employee.date_of_joining
-        old_profile_photo = employee.profile_photo
+
+        old_profile_photo_name = (
+            employee.profile_photo.name
+            if employee.profile_photo
+            else None
+        )
+
+        old_profile_photo_storage = (
+            employee.profile_photo.storage
+            if employee.profile_photo
+            else None
+        )
 
         new_role = validated_data.get(
             "role",
@@ -242,11 +253,14 @@ class EmployeeService:
 
         if (
             "profile_photo" in validated_data
-            and old_profile_photo
-            and old_profile_photo.name != employee.profile_photo.name
+            and old_profile_photo_name
+            and old_profile_photo_storage
+            and old_profile_photo_name != employee.profile_photo.name
         ):
             transaction.on_commit(
-                old_profile_photo.delete
+                lambda: old_profile_photo_storage.delete(
+                    old_profile_photo_name,
+                )
             )
 
         return employee

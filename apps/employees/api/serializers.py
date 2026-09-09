@@ -142,6 +142,12 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    remove_profile_photo = serializers.BooleanField(
+        required=False,
+        write_only=True,
+        default=False,
+    )
+
     class Meta:
         model = Employee
         fields = (
@@ -150,6 +156,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             "phone_number",
             "date_of_birth",
             "profile_photo",
+            "remove_profile_photo",
             "address",
             "department",
             "designation",
@@ -165,6 +172,18 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+        """
+        Perform custom validations for employee updates.
+        """
+
+        remove_profile_photo = attrs.pop(
+            "remove_profile_photo",
+            False,
+        )
+
+        if remove_profile_photo:
+            attrs["profile_photo"] = None
+
         salary = attrs.get(
             "salary",
             self.instance.salary,
@@ -224,13 +243,15 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             new_role=new_role,
         )
 
-        if "profile_photo" in attrs:
+        if (
+            "profile_photo" in attrs
+            and attrs["profile_photo"] is not None
+        ):
             attrs["profile_photo"] = validate_profile_photo(
                 attrs["profile_photo"],
             )
 
         return attrs
-
 class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating employee status.
