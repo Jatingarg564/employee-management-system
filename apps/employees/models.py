@@ -132,7 +132,9 @@ class Employee(models.Model):
 
     employee_code = models.CharField(
         max_length=20,
-        unique=True
+        unique=True,
+        null=True,
+        blank=True,
     )
 
     first_name = models.CharField(

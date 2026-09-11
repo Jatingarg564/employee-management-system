@@ -28,56 +28,8 @@ class EmployeeService:
     """
 
     @staticmethod
-    def get_next_employee_sequence(role, department):
-        """
-        Get the next employee sequence for a role and department.
-        """
-
-        last_employee = (
-            Employee.objects.filter(
-                role=role,
-                department=department,
-            )
-            .order_by("-id")
-            .first()
-        )
-
-        if last_employee is None:
-            return 1
-
-        return int(last_employee.employee_code[-4:]) + 1
-
-    @staticmethod
-    def get_employee_sequence(employee_code):
-        """
-        Extract the sequence number from an employee code.
-        """
-
-        return int(employee_code[-4:])
-
-    @staticmethod
-    def generate_employee_code(
-        role,
-        department,
-        joining_year,
-        sequence,
-    ):
-        """
-        Generate an employee code.
-
-        Format:
-        <ROLE><DEPARTMENT><YEAR><SEQUENCE>
-
-        Example:
-        EMIT20260001
-        """
-
-        return (
-            f"{role}"
-            f"{department.code}"
-            f"{joining_year}"
-            f"{sequence:04d}"
-        )
+    def generate_employee_code(employee_id):
+        return f"EMP{employee_id:06d}"
 
     @classmethod
     @transaction.atomic
@@ -88,11 +40,6 @@ class EmployeeService:
         """
 
         username = validated_data.pop("username")
-
-        role = validated_data["role"]
-        department = validated_data["department"]
-        joining_date = validated_data["date_of_joining"]
-        joining_year = joining_date.year
 
         user = User.objects.create_user(
             username=username,
@@ -112,36 +59,20 @@ class EmployeeService:
             ]
         )
 
-        sequence = cls.get_next_employee_sequence(
-            role=role,
-            department=department,
-        )
-
-        employee_code = cls.generate_employee_code(
-            role=role,
-            department=department,
-            joining_year=joining_year,
-            sequence=sequence,
-        )
-
-        if Employee.objects.filter(
-            employee_code=employee_code
-        ).exists():
-            raise ValidationError(
-                {
-                    "employee_code": (
-                        "An employee with this generated employee code "
-                        "already exists."
-                    )
-                }
-            )
+        
 
         validated_data["user"] = user
-        validated_data["employee_code"] = employee_code
+        validated_data["employee_code"] = None
 
         employee = Employee.objects.create(
             **validated_data,
         )
+
+        employee.employee_code = cls.generate_employee_code(
+            employee.id
+        )
+
+        employee.save(update_fields=["employee_code"])
 
         verification = AccountService.create_verification(
             user=user,
@@ -174,10 +105,6 @@ class EmployeeService:
         department do not invalidate any department leadership
         assignments held by the employee.
         """
-
-        old_role = employee.role
-        old_department = employee.department
-        old_joining_date = employee.date_of_joining
 
         old_profile_photo_name = (
             employee.profile_photo.name
@@ -229,25 +156,6 @@ class EmployeeService:
                     field,
                     validated_data[field],
                 )
-
-        if (
-            old_role != employee.role
-            or old_department != employee.department
-            or (
-                old_joining_date.year
-                != employee.date_of_joining.year
-            )
-        ):
-            sequence = cls.get_employee_sequence(
-                employee.employee_code,
-            )
-
-            employee.employee_code = cls.generate_employee_code(
-                role=employee.role,
-                department=employee.department,
-                joining_year=employee.date_of_joining.year,
-                sequence=sequence,
-            )
 
         employee.save()
 
