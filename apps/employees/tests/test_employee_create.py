@@ -191,8 +191,9 @@ class EmployeeCreateAPITest(EmployeeBaseAPITestCase):
             email="peter@test.com"
         )
 
-        self.assertTrue(
-            employee.employee_code.startswith("EMIT")
+        self.assertEqual(
+            employee.employee_code,
+            f"EMP{employee.id:06d}",
         )
 
     def test_default_status_is_active(self):
