@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from apps.employees.permissions import get_accessible_employees
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
@@ -58,7 +59,9 @@ class EmployeeListCreateAPIView(APIView):
         Retrieve all employees.
         """
 
-        employees = Employee.objects.order_by(
+        employees = get_accessible_employees(
+            request.user.employee_profile,
+        ).order_by(
             "employee_code",
         )
 
@@ -134,13 +137,17 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @staticmethod
-    def get_employee(employee_id):
+    def get_employee(request, employee_id):
         """
-        Retrieve an employee instance.
+        Retrieve an employee accessible to the authenticated employee.
         """
 
+        accessible_employees = get_accessible_employees(
+            request.user.employee_profile,
+        )
+
         return get_object_or_404(
-            Employee,
+            accessible_employees,
             pk=employee_id,
         )
 
@@ -150,6 +157,7 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
         """
 
         employee = self.get_employee(
+            request,
             employee_id,
         )
 
