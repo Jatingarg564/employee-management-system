@@ -71,6 +71,7 @@ class EmployeeListCreateAPIView(APIView):
         serializer = EmployeeDetailSerializer(
             employees,
             many=True,
+            context={"request": request},
         )
 
         return Response(
@@ -105,6 +106,7 @@ class EmployeeListCreateAPIView(APIView):
 
         response_serializer = EmployeeDetailSerializer(
             employee,
+            context={"request": request},
         )
 
         return Response(
@@ -185,6 +187,7 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
 
         serializer = EmployeeDetailSerializer(
             employee,
+            context={"request": request},
         )
 
         return Response(
@@ -220,8 +223,13 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
             serializer.validated_data,
         )
 
+        response_serializer = EmployeeDetailSerializer(
+            employee,
+            context={"request": request},
+        )
+
         return Response(
-            EmployeeDetailSerializer(employee).data,
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
@@ -258,6 +266,7 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
 
         response_serializer = EmployeeDetailSerializer(
             employee,
+            context={"request": request},
         )
 
         return Response(
@@ -335,6 +344,8 @@ class EmployeeStatusAPIView(APIView):
 
         response_serializer = EmployeeDetailSerializer(
             employee,
+            context={"request": request},
+
         )
 
         return Response(

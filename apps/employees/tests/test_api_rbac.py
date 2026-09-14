@@ -562,6 +562,233 @@ class EmployeeAPIRBACTestCase(APITestCase):
         )
 
     # ============================================================
+    # FIELD VISIBILITY TESTS
+    # ============================================================
+
+    def assert_fields_present(self, response, fields):
+        for field in fields:
+            self.assertIn(field, response.data)
+
+    def assert_fields_hidden(self, response, fields):
+        for field in fields:
+            self.assertNotIn(field, response.data)
+
+    def test_admin_can_see_all_employee_business_fields(self):
+        self.authenticate_as(self.admin)
+
+        response = self.client.get(
+            self.employee_detail_url(self.employee)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assert_fields_present(
+            response,
+            {
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "date_of_birth",
+                "profile_photo",
+                "address",
+                "department",
+                "designation",
+                "reporting_to",
+                "date_of_joining",
+                "employment_type",
+                "role",
+                "status",
+                "salary",
+            },
+        )
+
+        self.assert_fields_hidden(
+            response,
+            {
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    def test_hr_can_see_all_employee_business_fields(self):
+        self.authenticate_as(self.hr)
+
+        response = self.client.get(
+            self.employee_detail_url(self.employee)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assert_fields_present(
+            response,
+            {
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "date_of_birth",
+                "profile_photo",
+                "address",
+                "department",
+                "designation",
+                "reporting_to",
+                "date_of_joining",
+                "employment_type",
+                "role",
+                "status",
+                "salary",
+            },
+        )
+
+        self.assert_fields_hidden(
+            response,
+            {
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    def test_hod_cannot_see_private_employee_fields(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.get(
+            self.employee_detail_url(self.finance_employee)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assert_fields_present(
+            response,
+            {
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "profile_photo",
+                "department",
+                "designation",
+                "reporting_to",
+                "date_of_joining",
+                "employment_type",
+                "role",
+                "status",
+            },
+        )
+
+        self.assert_fields_hidden(
+            response,
+            {
+                "date_of_birth",
+                "address",
+                "salary",
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    def test_manager_cannot_see_private_employee_fields(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.get(
+            self.employee_detail_url(self.direct_subordinate)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assert_fields_present(
+            response,
+            {
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "profile_photo",
+                "department",
+                "designation",
+                "reporting_to",
+                "date_of_joining",
+                "employment_type",
+                "role",
+                "status",
+            },
+        )
+
+        self.assert_fields_hidden(
+            response,
+            {
+                "date_of_birth",
+                "address",
+                "salary",
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    def test_employee_can_see_own_business_fields(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.get(
+            self.employee_detail_url(self.employee)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assert_fields_present(
+            response,
+            {
+                "id",
+                "employee_code",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "date_of_birth",
+                "profile_photo",
+                "address",
+                "department",
+                "designation",
+                "reporting_to",
+                "date_of_joining",
+                "employment_type",
+                "role",
+                "status",
+                "salary",
+            },
+        )
+
+        self.assert_fields_hidden(
+            response,
+            {
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    # ============================================================
     # CREATE API TESTS
     # ============================================================
 

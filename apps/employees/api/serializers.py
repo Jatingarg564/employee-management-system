@@ -28,10 +28,6 @@ from apps.employees.validators import (
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Employee model.
-    """
-
     class Meta:
         model = Employee
         fields = (
@@ -52,15 +48,38 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             "salary",
             "profile_photo",
             "address",
-            "created_at",
-            "updated_at",
         )
 
         read_only_fields = (
             "employee_code",
-            "created_at",
-            "updated_at",
         )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        request = self.context.get("request")
+
+        if not request:
+            return data
+
+        viewer = getattr(
+            request.user,
+            "employee_profile",
+            None,
+        )
+
+        if not viewer:
+            return data
+
+        if (
+            viewer.role == EmploymentRole.MANAGER
+            and instance != viewer
+        ):
+            data.pop("date_of_birth", None)
+            data.pop("address", None)
+            data.pop("salary", None)
+
+        return data
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
