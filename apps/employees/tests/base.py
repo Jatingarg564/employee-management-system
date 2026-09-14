@@ -41,14 +41,8 @@ class EmployeeBaseAPITestCase(APITestCase):
             name="Software Engineer"
         )
 
-        cls.manager_user = User.objects.create_user(
-            username="manager",
-            email="manager@test.com",
-            password="Admin@123"
-        )
-
         cls.manager = Employee.objects.create(
-            user=cls.manager_user,
+            user=cls.user,
             employee_code="EMIT20260001",
             first_name="John",
             last_name="Manager",
@@ -58,7 +52,7 @@ class EmployeeBaseAPITestCase(APITestCase):
             date_of_joining=date.today(),
             department=cls.department,
             designation=cls.designation,
-            role=EmploymentRole.EMPLOYEE,
+            role=EmploymentRole.ADMIN,
             employment_type=EmploymentType.FULL_TIME,
             salary=Decimal("70000"),
             status=EmployeeStatus.ACTIVE,

@@ -54,3 +54,47 @@ def can_update_employee(employee, target_employee):
     the target employee record.
     """
     return target_employee in get_accessible_employees(employee)
+
+def can_delete_employee(employee, target_employee):
+    """
+    Return whether the employee is allowed to soft delete
+    the target employee record.
+    """
+
+    if employee.role in (
+        EmploymentRole.ADMIN,
+        EmploymentRole.HR,
+    ):
+        return True
+
+    if employee.role == EmploymentRole.MANAGER:
+        return target_employee.department_id in (
+            employee.headed_departments.values_list(
+                "id",
+                flat=True,
+            )
+        )
+
+    return False
+
+def can_change_employee_status(employee, target_employee):
+    """
+    Return whether the employee is allowed to change
+    the status of the target employee.
+    """
+
+    if employee.role in (
+        EmploymentRole.ADMIN,
+        EmploymentRole.HR,
+    ):
+        return True
+
+    if employee.role == EmploymentRole.MANAGER:
+        return target_employee.department_id in (
+            employee.headed_departments.values_list(
+                "id",
+                flat=True,
+            )
+        )
+
+    return False

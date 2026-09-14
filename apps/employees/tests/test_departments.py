@@ -28,10 +28,6 @@ class DepartmentAPITestCase(APITestCase):
             password="AdminPassword123!",
         )
 
-        self.client.force_authenticate(
-            user=self.user,
-        )
-
         self.department = Department.objects.create(
             name="Engineering",
             code="ENG",
@@ -39,9 +35,37 @@ class DepartmentAPITestCase(APITestCase):
             location="Bangalore",
         )
 
+        self.admin_department = Department.objects.create(
+            name="Administration",
+            code="ADM",
+            budget=Decimal("100000.00"),
+            location="Bangalore",
+        )
+
         self.designation = Designation.objects.create(
             name="Software Engineer",
             description="Software engineering role.",
+        )
+
+        self.admin_employee = Employee.objects.create(
+            user=self.user,
+            employee_code=f"EMP{self.user.id:04d}",
+            first_name="Test",
+            last_name="Admin",
+            email="admin@example.com",
+            phone_number=f"98765{self.user.id:05d}",
+            date_of_birth="1990-01-01",
+            department=self.admin_department,
+            designation=self.designation,
+            date_of_joining="2020-01-01",
+            employment_type=EmploymentType.FULL_TIME,
+            role=EmploymentRole.ADMIN,
+            status=EmployeeStatus.ACTIVE,
+            salary=Decimal("50000.00"),
+        )
+
+        self.client.force_authenticate(
+            user=self.user,
         )
 
     # ========================================================

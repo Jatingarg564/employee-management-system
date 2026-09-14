@@ -167,6 +167,21 @@ class EmployeeAPIRBACTestCase(APITestCase):
             update_fields=["head"],
         )
 
+        cls.finance_manager = cls.create_employee(
+            username="financemanager",
+            email="financemanager@test.com",
+            phone_number="9000000013",
+            first_name="Finance",
+            last_name="Manager",
+            department=cls.finance_department,
+            role=EmploymentRole.MANAGER,
+        )
+
+        cls.finance_department.manager = cls.finance_manager
+        cls.finance_department.save(
+            update_fields=["manager"],
+        )
+
         cls.finance_employee = cls.create_employee(
             username="financeemployee",
             email="financeemployee@test.com",
@@ -201,6 +216,14 @@ class EmployeeAPIRBACTestCase(APITestCase):
             department=cls.it_department,
             role=EmploymentRole.EMPLOYEE,
         )
+
+    def status_update_payload(
+        self,
+        status_value=EmployeeStatus.INACTIVE,
+    ):
+        return {
+            "status": status_value,
+        }
 
     @classmethod
     def create_employee(
@@ -1243,3 +1266,193 @@ class EmployeeAPIRBACTestCase(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    # ============================================================
+    # DELETE API TESTS
+    # ============================================================
+
+    def test_admin_can_delete_any_employee(self):
+        self.authenticate_as(self.admin)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.unrelated_employee),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_hr_can_delete_any_employee(self):
+        self.authenticate_as(self.hr)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.unrelated_employee),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_hod_can_delete_employee_in_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.finance_employee),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_hod_can_delete_department_manager(self):
+        self.finance_department.manager = None
+        self.finance_department.save(
+            update_fields=["manager"],
+        )
+
+        self.authenticate_as(self.hod)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.finance_manager),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_hod_cannot_delete_employee_outside_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.hod_outside_employee),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_cannot_delete_direct_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.direct_subordinate),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_employee_cannot_delete_self(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.delete(
+            self.employee_detail_url(self.employee),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_admin_can_change_any_employee_status(self):
+        self.authenticate_as(self.admin)
+
+        response = self.client.patch(
+            f"/api/employees/{self.unrelated_employee.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["status"],
+            EmployeeStatus.INACTIVE,
+        )
+
+
+    def test_hr_can_change_any_employee_status(self):
+        self.authenticate_as(self.hr)
+
+        response = self.client.patch(
+            f"/api/employees/{self.unrelated_employee.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["status"],
+            EmployeeStatus.INACTIVE,
+        )
+
+
+    def test_hod_can_change_status_of_employee_in_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.patch(
+            f"/api/employees/{self.finance_employee.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["status"],
+            EmployeeStatus.INACTIVE,
+        )
+
+
+    def test_hod_cannot_change_status_of_employee_outside_headed_department(
+        self,
+    ):
+        self.authenticate_as(self.hod)
+
+        response = self.client.patch(
+            f"/api/employees/{self.unrelated_employee.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_manager_cannot_change_status_of_direct_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.patch(
+            f"/api/employees/{self.direct_subordinate.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_employee_cannot_change_own_status(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.patch(
+            f"/api/employees/{self.employee.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_employee_cannot_change_another_employee_status(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.patch(
+            f"/api/employees/{self.direct_subordinate.id}/status/",
+            self.status_update_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

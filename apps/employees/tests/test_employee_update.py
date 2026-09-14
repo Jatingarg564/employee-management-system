@@ -16,7 +16,9 @@ from apps.employees.tests.base import EmployeeBaseAPITestCase
 class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
 
     def setUp(self):
-        self.authenticate()
+        self.client.force_authenticate(
+            user=self.employee.user,
+        )
 
         self.new_department = Department.objects.create(
             name="Human Resource",

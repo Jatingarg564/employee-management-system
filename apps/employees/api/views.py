@@ -1,10 +1,13 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from apps.employees.permissions import (
+    can_change_employee_status,
     can_create_employee,
+    can_delete_employee,
     can_update_employee,
     get_accessible_employees,
 )
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from rest_framework import request, status
@@ -283,6 +286,15 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
             employee_id,
         )
 
+        if not can_delete_employee(
+            request.user.employee_profile,
+            employee,
+        ):
+            return Response(
+                {"detail": "You do not have permission to delete this employee."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         EmployeeService.soft_delete_employee(
             employee,
         )
@@ -324,9 +336,21 @@ class EmployeeStatusAPIView(APIView):
         Update employee status.
         """
 
-        employee = self.get_employee(
-            employee_id,
-        )
+        employee = self.get_employee(employee_id)
+
+        if not can_change_employee_status(
+            request.user.employee_profile,
+            employee,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission to change "
+                        "this employee's status."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = EmployeeStatusUpdateSerializer(
             employee,
