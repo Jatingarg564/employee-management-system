@@ -1,7 +1,10 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from apps.employees.permissions import get_accessible_employees
-
+from apps.employees.permissions import (
+    can_create_employee,
+    can_update_employee,
+    get_accessible_employees,
+)
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from rest_framework import request, status
@@ -80,6 +83,14 @@ class EmployeeListCreateAPIView(APIView):
         Create a new employee.
         """
 
+        employee = request.user.employee_profile
+
+        if not can_create_employee(employee):
+            return Response(
+                {"detail": "You do not have permission to create an employee."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = EmployeeCreateSerializer(
             data=request.data,
         )
@@ -137,7 +148,18 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @staticmethod
-    def get_employee(request, employee_id):
+    def get_employee(employee_id):
+        """
+        Retrieve an employee instance.
+        """
+
+        return get_object_or_404(
+            Employee,
+            pk=employee_id,
+        )
+
+    @staticmethod
+    def get_accessible_employee(request, employee_id):
         """
         Retrieve an employee accessible to the authenticated employee.
         """
@@ -156,7 +178,7 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
         Retrieve a single employee.
         """
 
-        employee = self.get_employee(
+        employee = self.get_accessible_employee(
             request,
             employee_id,
         )
@@ -170,35 +192,36 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def put(self, request, employee_id, *args, **kwargs):
-        """
-        Fully update an employee.
-        """
+    def put(self, request, employee_id):
+        employee = self.get_employee(employee_id)
 
-        employee = self.get_employee(
-            employee_id,
-        )
+        if not can_update_employee(
+            request.user.employee_profile,
+            employee,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission to update "
+                        "this employee."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = EmployeeUpdateSerializer(
             employee,
             data=request.data,
         )
-
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        serializer.is_valid(raise_exception=True)
 
         employee = EmployeeService.update_employee(
             employee,
             serializer.validated_data,
         )
 
-        response_serializer = EmployeeDetailSerializer(
-            employee,
-        )
-
         return Response(
-            response_serializer.data,
+            EmployeeDetailSerializer(employee).data,
             status=status.HTTP_200_OK,
         )
 
@@ -207,9 +230,16 @@ class EmployeeRetrieveUpdateDestroyAPIView(APIView):
         Partially update an employee.
         """
 
-        employee = self.get_employee(
-            employee_id,
-        )
+        employee = self.get_employee(employee_id)
+
+        if not can_update_employee(
+            request.user.employee_profile,
+            employee,
+        ):
+            return Response(
+                {"detail": "You do not have permission to update this employee."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = EmployeeUpdateSerializer(
             employee,

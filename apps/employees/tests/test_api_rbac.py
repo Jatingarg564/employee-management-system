@@ -656,3 +656,363 @@ class EmployeeAPIRBACTestCase(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    # ============================================================
+    # UPDATE API TESTS
+    # ============================================================
+
+    def update_employee_payload(self, address="Updated Address"):
+        """
+        Return valid data for updating an employee.
+
+        Address is deliberately used here because this step tests
+        record-level authorization, not field-level permissions.
+        """
+
+        return {
+            "address": address,
+        }
+
+    # ------------------------------------------------------------
+    # PATCH
+    # ------------------------------------------------------------
+
+    def test_admin_can_patch_any_employee(self):
+        self.authenticate_as(self.admin)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.unrelated_employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hr_can_patch_any_employee(self):
+        self.authenticate_as(self.hr)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.unrelated_employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_can_patch_employee_in_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.finance_employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_cannot_patch_employee_outside_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.hod_outside_employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_can_patch_direct_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.direct_subordinate),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_manager_cannot_patch_indirect_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.indirect_subordinate),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_cannot_patch_unrelated_employee(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.unrelated_employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_employee_can_patch_self(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.employee),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_employee_cannot_patch_another_employee(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.patch(
+            self.employee_detail_url(self.direct_subordinate),
+            self.update_employee_payload(),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+        # ------------------------------------------------------------------
+    # PUT
+    # ------------------------------------------------------------------
+
+    def update_employee_put_payload(
+        self,
+        employee,
+        department,
+    ):
+        """
+        Return valid data for a full employee update.
+
+        PUT requires all writable employee fields.
+
+        A different department is supplied because the existing
+        department-transfer validation rejects assigning an employee
+        to the department they are already assigned to.
+
+        This step tests record-level authorization only.
+        """
+
+        return {
+            "first_name": employee.first_name,
+            "last_name": employee.last_name,
+            "phone_number": employee.phone_number,
+            "date_of_birth": employee.date_of_birth.isoformat(),
+            "profile_photo": None,
+            "address": "Updated Address",
+            "department": department.id,
+            "designation": employee.designation.id,
+            "reporting_to": (
+                employee.reporting_to.id
+                if employee.reporting_to
+                else None
+            ),
+            "date_of_joining": employee.date_of_joining.isoformat(),
+            "employment_type": employee.employment_type,
+            "role": employee.role,
+            "salary": str(employee.salary),
+        }
+
+    # ------------------------------------------------------------
+    # Admin
+    # ------------------------------------------------------------
+
+    def test_admin_can_put_any_employee(self):
+        self.authenticate_as(self.admin)
+
+        response = self.client.put(
+            self.employee_detail_url(self.manager),
+            self.update_employee_put_payload(
+                self.manager,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    # ------------------------------------------------------------
+    # HR
+    # ------------------------------------------------------------
+
+    def test_hr_can_put_any_employee(self):
+        self.authenticate_as(self.hr)
+
+        response = self.client.put(
+            self.employee_detail_url(self.manager),
+            self.update_employee_put_payload(
+                self.manager,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    # ------------------------------------------------------------
+    # HOD
+    # ------------------------------------------------------------
+
+    def test_hod_can_put_employee_in_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.put(
+            self.employee_detail_url(self.finance_employee),
+            self.update_employee_put_payload(
+                self.finance_employee,
+                department=self.it_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_cannot_put_employee_outside_headed_department(self):
+        self.authenticate_as(self.hod)
+
+        response = self.client.put(
+            self.employee_detail_url(self.hod_outside_employee),
+            self.update_employee_put_payload(
+                self.hod_outside_employee,
+                department=self.it_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    # ------------------------------------------------------------
+    # Manager
+    # ------------------------------------------------------------
+
+    def test_manager_can_put_direct_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.put(
+            self.employee_detail_url(self.direct_subordinate),
+            self.update_employee_put_payload(
+                self.direct_subordinate,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_manager_cannot_put_indirect_subordinate(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.put(
+            self.employee_detail_url(self.indirect_subordinate),
+            self.update_employee_put_payload(
+                self.indirect_subordinate,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_cannot_put_unrelated_employee(self):
+        self.authenticate_as(self.manager)
+
+        response = self.client.put(
+            self.employee_detail_url(self.unrelated_employee),
+            self.update_employee_put_payload(
+                self.unrelated_employee,
+                department=self.it_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    # ------------------------------------------------------------
+    # Employee
+    # ------------------------------------------------------------
+
+    def test_employee_can_put_self(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.put(
+            self.employee_detail_url(self.employee),
+            self.update_employee_put_payload(
+                self.employee,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_employee_cannot_put_another_employee(self):
+        self.authenticate_as(self.employee)
+
+        response = self.client.put(
+            self.employee_detail_url(self.manager),
+            self.update_employee_put_payload(
+                self.manager,
+                department=self.finance_department,
+            ),
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

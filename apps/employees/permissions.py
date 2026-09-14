@@ -36,3 +36,21 @@ def get_accessible_employees(employee):
         )
 
     return queryset.distinct()
+
+def can_create_employee(employee):
+    """
+    Return whether the employee is allowed to create
+    a new employee record.
+    """
+
+    return employee.role in (
+        EmploymentRole.ADMIN,
+        EmploymentRole.HR,
+    )
+
+def can_update_employee(employee, target_employee):
+    """
+    Return whether the employee is allowed to update
+    the target employee record.
+    """
+    return target_employee in get_accessible_employees(employee)
