@@ -1,7 +1,7 @@
 from django.db.models import Q
 
 from apps.employees.choices import EmploymentRole
-from apps.employees.models import Employee
+from apps.employees.models import Employee, Department
 
 
 def get_accessible_employees(employee):
@@ -98,3 +98,91 @@ def can_change_employee_status(employee, target_employee):
         )
 
     return False
+
+ADMINISTRATION_DEPARTMENT_CODE = "ADM"
+
+
+def is_administration_department(department):
+    return department.code == ADMINISTRATION_DEPARTMENT_CODE
+
+
+def get_accessible_departments(employee):
+    """
+    Return departments the employee is allowed to view.
+    """
+
+    if employee.role == EmploymentRole.ADMIN:
+        return Department.objects.all()
+
+    if employee.role == EmploymentRole.HR:
+        return Department.objects.exclude(
+            code=ADMINISTRATION_DEPARTMENT_CODE,
+        )
+
+    if employee.role == EmploymentRole.MANAGER:
+        headed_departments = employee.headed_departments.all()
+
+        if headed_departments.exists():
+            return headed_departments
+
+        return Department.objects.filter(
+            manager=employee,
+        )
+
+    if employee.role == EmploymentRole.EMPLOYEE:
+        return Department.objects.filter(
+            id=employee.department_id,
+        )
+
+    return Department.objects.none()
+
+
+def can_create_department(employee):
+    return employee.role in (
+        EmploymentRole.ADMIN,
+        EmploymentRole.HR,
+    )
+
+
+def can_retrieve_department(employee, department):
+    return get_accessible_departments(employee).filter(
+        id=department.id,
+    ).exists()
+
+
+def can_update_department(
+    employee,
+    department,
+    fields=None,
+):
+    """
+    Return whether the employee may update the department.
+
+    `fields` allows field-level authorization for sensitive
+    organizational assignments.
+    """
+
+    if employee.role == EmploymentRole.ADMIN:
+        return True
+
+    if employee.role == EmploymentRole.HR:
+        return not is_administration_department(department)
+
+    if employee.role != EmploymentRole.MANAGER:
+        return False
+
+    if department.head_id != employee.id:
+        return False
+
+    if fields and "head" in fields:
+        return False
+
+    return True
+
+
+def can_deactivate_department(employee, department):
+    """
+    Only Admin may deactivate departments.
+    """
+
+    return employee.role == EmploymentRole.ADMIN

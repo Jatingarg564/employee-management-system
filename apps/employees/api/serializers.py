@@ -352,6 +352,39 @@ class DepartmentSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class EmployeeDepartmentSerializer(serializers.ModelSerializer):
+    manager = serializers.SerializerMethodField()
+    head = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = (
+            "id",
+            "name",
+            "code",
+            "manager",
+            "head",
+        )
+
+    def get_manager(self, obj):
+        if obj.manager is None:
+            return None
+
+        return (
+            f"{obj.manager.first_name} "
+            f"{obj.manager.last_name}"
+        )
+
+    def get_head(self, obj):
+        if obj.head is None:
+            return None
+
+        return (
+            f"{obj.head.first_name} "
+            f"{obj.head.last_name}"
+        )
+
+
 class DesignationSerializer(serializers.ModelSerializer):
     """
     Serializer for Designation model.

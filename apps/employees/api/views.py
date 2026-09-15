@@ -6,6 +6,11 @@ from apps.employees.permissions import (
     can_delete_employee,
     can_update_employee,
     get_accessible_employees,
+    can_create_department,
+    can_deactivate_department,
+    can_retrieve_department,
+    can_update_department,
+    get_accessible_departments,
 )
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -14,10 +19,12 @@ from rest_framework import request, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.employees.choices import EmploymentRole
 
 from apps.employees.api.serializers import (
     EmployeeCreateSerializer,
     EmployeeDetailSerializer,
+    EmployeeDepartmentSerializer,
     EmployeeStatusUpdateSerializer,
     EmployeeUpdateSerializer,
     DesignationSerializer,
@@ -431,23 +438,25 @@ class DesignationListAPIView(APIView):
     ),
 )
 class DepartmentListCreateAPIView(APIView):
-    """
-    API view for listing and creating departments.
-    """
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """
-        Retrieve all departments.
-        """
+        employee = request.user.employee_profile
 
-        departments = Department.objects.all()
-
-        serializer = DepartmentSerializer(
-            departments,
-            many=True,
+        departments = get_accessible_departments(
+            employee,
         )
+
+        if employee.role == EmploymentRole.EMPLOYEE:
+            serializer = EmployeeDepartmentSerializer(
+                departments,
+                many=True,
+            )
+        else:
+            serializer = DepartmentSerializer(
+                departments,
+                many=True,
+            )
 
         return Response(
             serializer.data,
@@ -455,14 +464,22 @@ class DepartmentListCreateAPIView(APIView):
         )
 
     def post(self, request, *args, **kwargs):
-        """
-        Create a new department.
-        """
+        employee = request.user.employee_profile
+
+        if not can_create_department(employee):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to create a department."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = DepartmentSerializer(
             data=request.data,
         )
-
         serializer.is_valid(
             raise_exception=True,
         )
@@ -514,6 +531,38 @@ class DepartmentListCreateAPIView(APIView):
 )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Departments"],
+        summary="Retrieve Department",
+        description="Retrieve a single department.",
+        operation_id="retrieve_department",
+        responses=DepartmentSerializer,
+    ),
+    put=extend_schema(
+        tags=["Departments"],
+        summary="Update Department",
+        description="Fully update a department.",
+        operation_id="update_department",
+        request=DepartmentSerializer,
+        responses=DepartmentSerializer,
+    ),
+    patch=extend_schema(
+        tags=["Departments"],
+        summary="Partial Update Department",
+        description="Partially update a department.",
+        operation_id="partial_update_department",
+        request=DepartmentSerializer,
+        responses=DepartmentSerializer,
+    ),
+    delete=extend_schema(
+        tags=["Departments"],
+        summary="Deactivate Department",
+        description="Soft deactivate a department.",
+        operation_id="deactivate_department",
+        responses={204: None},
+    ),
+)
 class DepartmentRetrieveUpdateDestroyAPIView(APIView):
     """
     API view for retrieving, updating and deactivating departments.
@@ -541,9 +590,30 @@ class DepartmentRetrieveUpdateDestroyAPIView(APIView):
             department_id,
         )
 
-        serializer = DepartmentSerializer(
+        employee = request.user.employee_profile
+
+        if not can_retrieve_department(
+            employee,
             department,
-        )
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to access this department."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if employee.role == EmploymentRole.EMPLOYEE:
+            serializer = EmployeeDepartmentSerializer(
+                department,
+            )
+        else:
+            serializer = DepartmentSerializer(
+                department,
+            )
 
         return Response(
             serializer.data,
@@ -558,6 +628,23 @@ class DepartmentRetrieveUpdateDestroyAPIView(APIView):
         department = self.get_department(
             department_id,
         )
+
+        employee = request.user.employee_profile
+
+        if not can_update_department(
+            employee,
+            department,
+            fields=request.data.keys(),
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to update this department."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         serializer = DepartmentSerializer(
             department,
@@ -591,6 +678,23 @@ class DepartmentRetrieveUpdateDestroyAPIView(APIView):
             department_id,
         )
 
+        employee = request.user.employee_profile
+
+        if not can_update_department(
+            employee,
+            department,
+            fields=request.data.keys(),
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to update this department."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = DepartmentSerializer(
             department,
             data=request.data,
@@ -623,6 +727,22 @@ class DepartmentRetrieveUpdateDestroyAPIView(APIView):
         department = self.get_department(
             department_id,
         )
+
+        employee = request.user.employee_profile
+
+        if not can_deactivate_department(
+            employee,
+            department,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to deactivate this department."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         DepartmentService.deactivate_department(
             department,
