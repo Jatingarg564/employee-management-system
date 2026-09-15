@@ -5,7 +5,6 @@ from rest_framework import status
 from apps.employees.choices import (
     EmploymentRole,
     EmploymentType,
-    EmployeeStatus,
 )
 from apps.employees.models import (
     Department,
@@ -17,7 +16,9 @@ from apps.employees.tests.base import EmployeeBaseAPITestCase
 class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
 
     def setUp(self):
-        self.authenticate()
+        self.client.force_authenticate(
+            user=self.employee.user,
+        )
 
         self.new_department = Department.objects.create(
             name="Human Resource",
@@ -149,7 +150,7 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
             self.new_department
         )
 
-    def test_department_change_regenerates_employee_code(self):
+    def test_department_change_does_not_change_employee_code(self):
 
         old_code = self.employee.employee_code
 
@@ -159,17 +160,14 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
 
         self.employee.refresh_from_db()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertNotEqual(
-            old_code,
-            self.employee.employee_code
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
         )
 
-        self.assertTrue(
-            self.employee.employee_code.startswith(
-                f"{self.employee.role}{self.new_department.code}"
-            )
+        self.assertEqual(
+            old_code,
+            self.employee.employee_code
         )
 
     # ------------------------------------------------------------
@@ -190,7 +188,7 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
             EmploymentRole.MANAGER
         )
 
-    def test_role_change_regenerates_employee_code(self):
+    def test_role_change_does_not_change_employee_code(self):
 
         old_code = self.employee.employee_code
 
@@ -200,17 +198,14 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
 
         self.employee.refresh_from_db()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertNotEqual(
-            old_code,
-            self.employee.employee_code
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
         )
 
-        self.assertTrue(
-            self.employee.employee_code.startswith(
-                f"{EmploymentRole.MANAGER}{self.department.code}"
-            )
+        self.assertEqual(
+            old_code,
+            self.employee.employee_code
         )
 
     # ------------------------------------------------------------
@@ -218,6 +213,8 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
     # ------------------------------------------------------------
 
     def test_change_department_and_role(self):
+
+        old_code = self.employee.employee_code
 
         response = self.patch_employee({
 
@@ -244,8 +241,7 @@ class EmployeeUpdateAPITest(EmployeeBaseAPITestCase):
             EmploymentRole.HR
         )
 
-        self.assertTrue(
-            self.employee.employee_code.startswith(
-                f"HR{self.new_department.code}"
-            )
+        self.assertEqual(
+            old_code,
+            self.employee.employee_code
         )

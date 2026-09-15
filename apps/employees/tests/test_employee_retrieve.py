@@ -156,10 +156,6 @@ class EmployeeRetrieveAPITest(EmployeeBaseAPITestCase):
 
             "profile_photo",
 
-            "created_at",
-
-            "updated_at",
-
         }
 
         self.assertTrue(

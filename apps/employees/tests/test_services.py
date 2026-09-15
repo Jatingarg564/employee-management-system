@@ -45,7 +45,7 @@ class EmployeeServiceTest(TestCase):
 
         cls.employee = Employee.objects.create(
             user=cls.user,
-            employee_code="EMIT20260001",
+            employee_code="EMP000001",
             first_name="John",
             last_name="Doe",
             email="john@test.com",
@@ -61,54 +61,30 @@ class EmployeeServiceTest(TestCase):
         )
 
     # ---------------------------------------------------------
-    # Employee Sequence
-    # ---------------------------------------------------------
-
-    def test_get_employee_sequence(self):
-
-        sequence = EmployeeService.get_employee_sequence(
-            "EMIT20260015"
-        )
-
-        self.assertEqual(sequence, 15)
-
-    def test_get_next_employee_sequence(self):
-
-        sequence = EmployeeService.get_next_employee_sequence(
-            EmploymentRole.EMPLOYEE,
-            self.department,
-        )
-
-        self.assertEqual(sequence, 2)
-
-    # ---------------------------------------------------------
     # Employee Code Generation
     # ---------------------------------------------------------
 
     def test_generate_employee_code(self):
 
         code = EmployeeService.generate_employee_code(
-            role=EmploymentRole.EMPLOYEE,
-            department=self.department,
-            joining_year=2026,
-            sequence=15,
+            15,
         )
 
         self.assertEqual(
             code,
-            "EMIT20260015",
+            "EMP000015",
         )
 
-    def test_employee_code_contains_department_code(self):
+    def test_generate_employee_code_uses_employee_id(self):
 
         code = EmployeeService.generate_employee_code(
-            role=EmploymentRole.MANAGER,
-            department=self.department2,
-            joining_year=2026,
-            sequence=5,
+            self.employee.id,
         )
 
-        self.assertTrue(code.startswith("MGHR"))
+        self.assertEqual(
+            code,
+            f"EMP{self.employee.id:06d}",
+        )
 
     # ---------------------------------------------------------
     # Employee Update
@@ -178,7 +154,7 @@ class EmployeeServiceTest(TestCase):
             EmploymentRole.MANAGER,
         )
 
-    def test_department_change_regenerates_employee_code(self):
+    def test_department_change_does_not_change_employee_code(self):
 
         old_code = self.employee.employee_code
 
@@ -191,12 +167,12 @@ class EmployeeServiceTest(TestCase):
 
         self.employee.refresh_from_db()
 
-        self.assertNotEqual(
+        self.assertEqual(
             old_code,
             self.employee.employee_code,
         )
 
-    def test_role_change_regenerates_employee_code(self):
+    def test_role_change_does_not_change_employee_code(self):
 
         old_code = self.employee.employee_code
 
@@ -209,7 +185,7 @@ class EmployeeServiceTest(TestCase):
 
         self.employee.refresh_from_db()
 
-        self.assertNotEqual(
+        self.assertEqual(
             old_code,
             self.employee.employee_code,
         )

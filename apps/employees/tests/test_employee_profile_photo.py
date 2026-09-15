@@ -290,13 +290,10 @@ class EmployeeProfilePhotoAPITest(EmployeeBaseAPITestCase):
             old_photo_name,
         )
 
+        self.employee.refresh_from_db()
+
         old_photo_path = Path(
-            self.temp_media.name,
-            old_photo_name.lstrip("/").replace(
-                "media/",
-                "",
-                1,
-            ),
+            self.employee.profile_photo.path,
         )
 
         self.assertTrue(
@@ -321,6 +318,12 @@ class EmployeeProfilePhotoAPITest(EmployeeBaseAPITestCase):
 
         new_photo_name = second_response.data["profile_photo"]
 
+        self.employee.refresh_from_db()
+
+        new_photo_path = Path(
+            self.employee.profile_photo.path,
+        )
+
         self.assertIsNotNone(
             new_photo_name,
         )
@@ -328,15 +331,6 @@ class EmployeeProfilePhotoAPITest(EmployeeBaseAPITestCase):
         self.assertNotEqual(
             old_photo_name,
             new_photo_name,
-        )
-
-        new_photo_path = Path(
-            self.temp_media.name,
-            new_photo_name.lstrip("/").replace(
-                "media/",
-                "",
-                1,
-            ),
         )
 
         self.assertTrue(

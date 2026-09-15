@@ -28,10 +28,6 @@ class DepartmentAPITestCase(APITestCase):
             password="AdminPassword123!",
         )
 
-        self.client.force_authenticate(
-            user=self.user,
-        )
-
         self.department = Department.objects.create(
             name="Engineering",
             code="ENG",
@@ -39,9 +35,37 @@ class DepartmentAPITestCase(APITestCase):
             location="Bangalore",
         )
 
+        self.admin_department = Department.objects.create(
+            name="Administration",
+            code="ADM",
+            budget=Decimal("100000.00"),
+            location="Bangalore",
+        )
+
         self.designation = Designation.objects.create(
             name="Software Engineer",
             description="Software engineering role.",
+        )
+
+        self.admin_employee = Employee.objects.create(
+            user=self.user,
+            employee_code=f"EMP{self.user.id:04d}",
+            first_name="Test",
+            last_name="Admin",
+            email="admin@example.com",
+            phone_number=f"98765{self.user.id:05d}",
+            date_of_birth="1990-01-01",
+            department=self.admin_department,
+            designation=self.designation,
+            date_of_joining="2020-01-01",
+            employment_type=EmploymentType.FULL_TIME,
+            role=EmploymentRole.ADMIN,
+            status=EmployeeStatus.ACTIVE,
+            salary=Decimal("50000.00"),
+        )
+
+        self.client.force_authenticate(
+            user=self.user,
         )
 
     # ========================================================
@@ -575,3 +599,491 @@ class DepartmentAPITestCase(APITestCase):
             self.department.is_active,
         )
 
+    # ========================================================
+    # RBAC
+    # ========================================================
+
+    def authenticate_as_employee(self, employee):
+        self.client.force_authenticate(
+            user=employee.user,
+        )
+
+    def create_department_rbac_employee(
+        self,
+        username,
+        role,
+        department=None,
+    ):
+        return self.create_employee(
+            username=username,
+            role=role,
+            department=department,
+        )
+
+    def test_admin_can_list_all_departments(self):
+        response = self.client.get(self.department_url())
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 2)
+
+    def test_admin_can_access_administration(self):
+        response = self.client.get(
+            self.department_url(
+                self.admin_department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_admin_can_create_department(self):
+        response = self.client.post(
+            self.department_url(),
+            {
+                "name": "Finance",
+                "code": "FIN",
+                "budget": "100000.00",
+                "location": "Delhi",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+    def test_admin_can_update_any_department(self):
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "location": "Mumbai",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_admin_can_deactivate_department(self):
+        response = self.client.delete(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_hr_can_access_non_administration_department(self):
+        hr = self.create_department_rbac_employee(
+            "hr_user",
+            EmploymentRole.HR,
+            self.department,
+        )
+        self.authenticate_as_employee(hr)
+
+        response = self.client.get(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hr_cannot_access_administration_department(self):
+        hr = self.create_department_rbac_employee(
+            "hr_user",
+            EmploymentRole.HR,
+            self.department,
+        )
+        self.authenticate_as_employee(hr)
+
+        response = self.client.get(
+            self.department_url(
+                self.admin_department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_hr_can_create_department(self):
+        hr = self.create_department_rbac_employee(
+            "hr_user",
+            EmploymentRole.HR,
+            self.department,
+        )
+        self.authenticate_as_employee(hr)
+
+        response = self.client.post(
+            self.department_url(),
+            {
+                "name": "Finance",
+                "code": "FIN",
+                "budget": "100000.00",
+                "location": "Delhi",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+    def test_hr_cannot_deactivate_department(self):
+        hr = self.create_department_rbac_employee(
+            "hr_user",
+            EmploymentRole.HR,
+            self.department,
+        )
+        self.authenticate_as_employee(hr)
+
+        response = self.client.delete(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_hod_can_access_headed_department(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.get(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_cannot_access_unheaded_department(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.get(
+            self.department_url(
+                self.admin_department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_hod_can_update_headed_department(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "location": "Mumbai",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_can_change_budget(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "budget": "900000.00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_hod_cannot_change_head(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "head": None,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_hod_cannot_deactivate_department(self):
+        hod = self.create_department_rbac_employee(
+            "hod_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.head = hod
+        self.department.save(
+            update_fields=["head"],
+        )
+
+        self.authenticate_as_employee(hod)
+
+        response = self.client.delete(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_can_access_managed_department(self):
+        manager = self.create_department_rbac_employee(
+            "manager_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.manager = manager
+        self.department.save(
+            update_fields=["manager"],
+        )
+
+        self.authenticate_as_employee(manager)
+
+        response = self.client.get(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_manager_cannot_access_unmanaged_department(self):
+        manager = self.create_department_rbac_employee(
+            "manager_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.manager = manager
+        self.department.save(
+            update_fields=["manager"],
+        )
+
+        self.authenticate_as_employee(manager)
+
+        response = self.client.get(
+            self.department_url(
+                self.admin_department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_manager_cannot_update_department(self):
+        manager = self.create_department_rbac_employee(
+            "manager_user",
+            EmploymentRole.MANAGER,
+            self.department,
+        )
+
+        self.department.manager = manager
+        self.department.save(
+            update_fields=["manager"],
+        )
+
+        self.authenticate_as_employee(manager)
+
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "location": "Mumbai",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_employee_can_access_own_department(self):
+        employee = self.create_department_rbac_employee(
+            "normal_employee",
+            EmploymentRole.EMPLOYEE,
+            self.department,
+        )
+        self.authenticate_as_employee(employee)
+
+        response = self.client.get(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_employee_cannot_access_other_department(self):
+        employee = self.create_department_rbac_employee(
+            "normal_employee",
+            EmploymentRole.EMPLOYEE,
+            self.department,
+        )
+        self.authenticate_as_employee(employee)
+
+        response = self.client.get(
+            self.department_url(
+                self.admin_department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_employee_cannot_update_department(self):
+        employee = self.create_department_rbac_employee(
+            "normal_employee",
+            EmploymentRole.EMPLOYEE,
+            self.department,
+        )
+        self.authenticate_as_employee(employee)
+
+        response = self.client.patch(
+            self.department_url(
+                self.department.id,
+            ),
+            {
+                "location": "Mumbai",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_employee_cannot_deactivate_department(self):
+        employee = self.create_department_rbac_employee(
+            "normal_employee",
+            EmploymentRole.EMPLOYEE,
+            self.department,
+        )
+        self.authenticate_as_employee(employee)
+
+        response = self.client.delete(
+            self.department_url(
+                self.department.id,
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
