@@ -125,6 +125,22 @@ class EmployeeListCreateAPIView(APIView):
         )
 
 
+class CurrentEmployeeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        employee = request.user.employee_profile
+
+        serializer = EmployeeDetailSerializer(
+            employee,
+            context={"request": request},
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
 @extend_schema_view(
     get=extend_schema(
         tags=["Employees"],
