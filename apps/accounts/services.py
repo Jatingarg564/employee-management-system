@@ -17,40 +17,30 @@ class AuthenticationService:
     """
 
     @staticmethod
-    def login(
-        username,
-        password,
-    ):
-        """
-        Authenticate a user and generate JWT tokens.
-        """
-
-        user = authenticate(
-            username=username,
-            password=password,
-        )
+    def login(username, password):
+        user = authenticate(username=username, password=password)
 
         if user is None:
-            raise AuthenticationFailed(
-                "Invalid username or password."
-            )
-
+            raise AuthenticationFailed("Invalid username or password.")
         if not user.is_active:
-            raise AuthenticationFailed(
-                "This user account is inactive."
-            )
+            raise AuthenticationFailed("This user account is inactive.")
 
-        refresh = RefreshToken.for_user(
-            user,
-        )
+        refresh = RefreshToken.for_user(user)
+
+        employee = getattr(user, "employee_profile", None)
+
+        if employee is not None:
+            refresh["user_id"] = user.id
+            refresh["employee_id"] = employee.id
+            refresh["role"] = employee.role
+            refresh["username"] = user.username
+        else:
+            refresh["user_id"] = user.id
+            refresh["username"] = user.username
 
         return {
-            "access": str(
-                refresh.access_token,
-            ),
-            "refresh": str(
-                refresh,
-            ),
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
         }
 
 

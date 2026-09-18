@@ -78,10 +78,6 @@ urlpatterns = [
         "api/appraisal/",
         include("apps.appraisal.api.urls"),
     ),
-    path(
-        "api/authorization/",
-        include("apps.authorization.api.urls"),
-    ),
 ]
 
 if settings.DEBUG:
