@@ -144,6 +144,53 @@ class AuthenticationService:
 
         return tokens
 
+    @staticmethod
+    @transaction.atomic
+    def logout(refresh_token):
+        """
+        Revoke the authentication session associated with the
+        supplied refresh token.
+        """
+
+        try:
+            refresh = RefreshToken(refresh_token)
+        except TokenError:
+            raise AuthenticationFailed(
+                "Refresh token is invalid, expired, or has been revoked."
+            )
+
+        jti = refresh["jti"]
+
+        try:
+            session = (
+                AuthSession.objects
+                .select_for_update()
+                .get(
+                    refresh_token_jti=jti,
+                    revoked_at__isnull=True,
+                )
+            )
+        except AuthSession.DoesNotExist:
+            raise AuthenticationFailed(
+                "Authentication session is invalid or has already been revoked."
+            )
+
+        session.revoked_at = timezone.now()
+
+        session.save(
+            update_fields=[
+                "revoked_at",
+            ]
+        )
+
+        # Blacklist the refresh token so it cannot be used again.
+        try:
+            refresh.blacklist()
+        except AttributeError:
+            # Blacklist support should be enabled in this project,
+            # but keep this safe if the blacklist app is unavailable.
+            pass
+
 
 class AccountService:
     """

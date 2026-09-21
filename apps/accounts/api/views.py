@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from apps.accounts.api.serializers import (
     AccountActivationSerializer,
     LoginSerializer,
+    LogoutSerializer,
     TokenRefreshSerializer,
     TokenValidationSerializer,
 )
@@ -206,3 +207,16 @@ class TokenRefreshAPIView(APIView):
             tokens,
             status=status.HTTP_200_OK,
         )
+
+class LogoutAPIView(APIView):
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        AuthenticationService.logout(
+            refresh_token=serializer.validated_data["refresh"]
+        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
