@@ -55,3 +55,13 @@ class TokenValidationSerializer(serializers.Serializer):
     token = serializers.CharField(
         write_only=True,
     )
+
+
+class TokenRefreshSerializer(serializers.Serializer):
+    """
+    Serializer for refreshing authentication tokens.
+    """
+
+    refresh = serializers.CharField(
+        write_only=True,
+    )

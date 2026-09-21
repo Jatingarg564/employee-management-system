@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from apps.accounts.api.serializers import (
     AccountActivationSerializer,
     LoginSerializer,
+    TokenRefreshSerializer,
     TokenValidationSerializer,
 )
 
@@ -187,5 +188,21 @@ class AccountActivationAPIView(APIView):
             {
                 "detail": "Account activated successfully.",
             },
+            status=status.HTTP_200_OK,
+        )
+
+class TokenRefreshAPIView(APIView):
+    permission_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = TokenRefreshSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tokens = AuthenticationService.refresh(
+            refresh_token=serializer.validated_data["refresh"]
+        )
+
+        return Response(
+            tokens,
             status=status.HTTP_200_OK,
         )
