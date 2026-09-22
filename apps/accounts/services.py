@@ -42,7 +42,7 @@ class AuthenticationService:
             refresh["user_id"] = user.id
             refresh["username"] = user.username
 
-        AuthSession.objects.create(
+        session = AuthSession.objects.create(
             user=user,
             refresh_token_jti=refresh["jti"],
             expires_at=(
@@ -50,6 +50,9 @@ class AuthenticationService:
                 + settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
             ),
         )
+
+        # Associate the JWTs with this server-side authentication session.
+        refresh["session_id"] = session.id
 
         return {
             "access": str(refresh.access_token),
