@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import AuthSession
 
@@ -166,3 +167,27 @@ class LogoutTest(APITestCase):
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_logout_ignores_expired_access_token_when_refresh_is_valid(self):
+        tokens = self.login()
+
+        session = AuthSession.objects.get(user=self.user)
+        expired_access = AccessToken()
+        expired_access["user_id"] = self.user.id
+        expired_access["session_id"] = session.id
+        expired_access["token_type"] = "access"
+        expired_access["exp"] = timezone.now() - timezone.timedelta(minutes=5)
+
+        response = self.client.post(
+            "/api/accounts/logout/",
+            {
+                "refresh": tokens["refresh"],
+            },
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {expired_access}",
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        session.refresh_from_db()
+        assert session.revoked_at is not None

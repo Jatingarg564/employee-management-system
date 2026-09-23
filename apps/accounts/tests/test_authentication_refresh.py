@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import AuthSession
 
@@ -161,3 +162,26 @@ class AuthenticationRefreshTest(APITestCase):
         sessions[1].refresh_from_db()
 
         assert sessions[0].refresh_token_jti != sessions[1].refresh_token_jti
+
+    def test_expired_access_token_does_not_block_refresh_with_valid_refresh_token(self):
+        tokens = self.login()
+
+        session = AuthSession.objects.get(user=self.user)
+        expired_access = AccessToken()
+        expired_access["user_id"] = self.user.id
+        expired_access["session_id"] = session.id
+        expired_access["token_type"] = "access"
+        expired_access["exp"] = timezone.now() - timedelta(minutes=5)
+
+        response = self.client.post(
+            "/api/accounts/token/refresh/",
+            {
+                "refresh": tokens["refresh"],
+            },
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {expired_access}",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "access" in response.data
+        assert "refresh" in response.data
