@@ -259,4 +259,7 @@ class LogoutAPIView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Logged out successfully."},
+            status=status.HTTP_200_OK,
+        )
