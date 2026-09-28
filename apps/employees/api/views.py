@@ -25,6 +25,7 @@ from apps.employees.api.serializers import (
     EmployeeCreateSerializer,
     EmployeeDetailSerializer,
     EmployeeDepartmentSerializer,
+    EmployeeSelfUpdateSerializer,
     EmployeeStatusUpdateSerializer,
     EmployeeUpdateSerializer,
     DesignationSerializer,
@@ -138,6 +139,37 @@ class CurrentEmployeeAPIView(APIView):
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, *args, **kwargs):
+        """
+        Update the authenticated employee's own self-service profile.
+        Only personal fields are allowed through this endpoint.
+        """
+
+        employee = request.user.employee_profile
+
+        serializer = EmployeeSelfUpdateSerializer(
+            employee,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        employee = EmployeeService.update_self_profile(
+            employee,
+            serializer.validated_data,
+        )
+
+        response_serializer = EmployeeDetailSerializer(
+            employee,
+            context={"request": request},
+        )
+
+        return Response(
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 

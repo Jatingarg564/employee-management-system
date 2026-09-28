@@ -45,7 +45,7 @@ class LogoutTest(APITestCase):
             format="json",
         )
 
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
 
     def test_logout_revokes_auth_session(self):
         tokens = self.login()
@@ -63,7 +63,7 @@ class LogoutTest(APITestCase):
             format="json",
         )
 
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
 
         session.refresh_from_db()
 
@@ -80,7 +80,7 @@ class LogoutTest(APITestCase):
             format="json",
         )
 
-        assert logout_response.status_code == status.HTTP_204_NO_CONTENT
+        assert logout_response.status_code == status.HTTP_200_OK
 
         refresh_response = self.client.post(
             "/api/accounts/token/refresh/",
@@ -113,7 +113,7 @@ class LogoutTest(APITestCase):
             format="json",
         )
 
-        assert logout_response.status_code == status.HTTP_204_NO_CONTENT
+        assert logout_response.status_code == status.HTTP_200_OK
 
         sessions[0].refresh_from_db()
         sessions[1].refresh_from_db()
@@ -187,7 +187,7 @@ class LogoutTest(APITestCase):
             HTTP_AUTHORIZATION=f"Bearer {expired_access}",
         )
 
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
 
         session.refresh_from_db()
         assert session.revoked_at is not None

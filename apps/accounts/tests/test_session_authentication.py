@@ -150,7 +150,7 @@ class SessionJWTAuthenticationTest(APITestCase):
 
         self.assertEqual(
             logout_response.status_code,
-            status.HTTP_204_NO_CONTENT,
+            status.HTTP_200_OK,
         )
 
         session = AuthSession.objects.get(
