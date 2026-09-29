@@ -188,7 +188,7 @@ class EmployeeDeleteAPITest(EmployeeBaseAPITestCase):
 
         employee = next(
             emp
-            for emp in response.data
+            for emp in response.data["results"]
             if emp["id"] == self.employee.id
         )
 
