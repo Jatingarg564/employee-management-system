@@ -1,12 +1,18 @@
 from drf_spectacular.utils import extend_schema
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.api.serializers import (
     AccountActivationSerializer,
     LoginSerializer,
+    LogoutSerializer,
+    TokenRefreshSerializer,
     TokenValidationSerializer,
 )
 
@@ -16,12 +22,14 @@ from apps.accounts.services import (
 )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class LoginAPIView(APIView):
     """
     API endpoint for user authentication.
     """
 
     permission_classes = []
+    authentication_classes = []
 
     @extend_schema(
         tags=["Authentication"],
@@ -63,10 +71,18 @@ class LoginAPIView(APIView):
             raise_exception=True,
         )
 
-        tokens = AuthenticationService.login(
-            username=serializer.validated_data["username"],
-            password=serializer.validated_data["password"],
-        )
+        try:
+            tokens = AuthenticationService.login(
+                username=serializer.validated_data["username"],
+                password=serializer.validated_data["password"],
+            )
+        except AuthenticationFailed as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         return Response(
             tokens,
@@ -74,12 +90,14 @@ class LoginAPIView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ValidateActivationTokenAPIView(APIView):
     """
     API endpoint for validating an employee activation token.
     """
 
     permission_classes = []
+    authentication_classes = []
 
     @extend_schema(
         tags=["Authentication"],
@@ -134,12 +152,14 @@ class ValidateActivationTokenAPIView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class AccountActivationAPIView(APIView):
     """
     API endpoint for employee account activation.
     """
 
     permission_classes = []
+    authentication_classes = []
 
     @extend_schema(
         tags=["Authentication"],
@@ -187,5 +207,59 @@ class AccountActivationAPIView(APIView):
             {
                 "detail": "Account activated successfully.",
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TokenRefreshAPIView(APIView):
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = TokenRefreshSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            tokens = AuthenticationService.refresh(
+                refresh_token=serializer.validated_data["refresh"]
+            )
+        except AuthenticationFailed as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return Response(
+            tokens,
+            status=status.HTTP_200_OK,
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class LogoutAPIView(APIView):
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            AuthenticationService.logout(
+                refresh_token=serializer.validated_data["refresh"]
+            )
+        except AuthenticationFailed as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return Response(
+            {"detail": "Logged out successfully."},
             status=status.HTTP_200_OK,
         )

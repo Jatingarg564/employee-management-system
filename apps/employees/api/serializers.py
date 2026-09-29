@@ -151,6 +151,58 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class EmployeeSelfUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for authenticated users updating only their own
+    personal profile information.
+    """
+
+    profile_photo = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Employee
+        fields = (
+            "phone_number",
+            "profile_photo",
+            "address",
+        )
+
+    def validate(self, attrs):
+        forbidden_inputs = set(self.initial_data) - set(self.fields)
+
+        if forbidden_inputs:
+            raise serializers.ValidationError(
+                {
+                    "detail": (
+                        "Only phone_number, profile_photo, and "
+                        "address may be updated from the self-service profile endpoint."
+                    )
+                }
+            )
+
+        if "phone_number" in attrs:
+            existing = Employee.objects.filter(
+                phone_number=attrs["phone_number"],
+            ).exclude(id=self.instance.id)
+
+            if existing.exists():
+                raise serializers.ValidationError(
+                    {
+                        "phone_number": "An employee with this phone number already exists.",
+                    }
+                )
+
+        if "profile_photo" in attrs and attrs["profile_photo"] is not None:
+            attrs["profile_photo"] = validate_profile_photo(
+                attrs["profile_photo"],
+            )
+
+        return attrs
+
+
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for updating employee information.

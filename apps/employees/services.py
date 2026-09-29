@@ -93,6 +93,61 @@ class EmployeeService:
 
     @classmethod
     @transaction.atomic
+    def update_self_profile(
+        cls,
+        employee,
+        validated_data,
+    ):
+        """
+        Update the authenticated employee's personal profile data.
+
+        Only self-service fields are allowed through this path.
+        """
+
+        old_profile_photo_name = (
+            employee.profile_photo.name
+            if employee.profile_photo
+            else None
+        )
+
+        old_profile_photo_storage = (
+            employee.profile_photo.storage
+            if employee.profile_photo
+            else None
+        )
+
+        updatable_fields = (
+            "phone_number",
+            "profile_photo",
+            "address",
+        )
+
+        for field in updatable_fields:
+            if field in validated_data:
+                setattr(
+                    employee,
+                    field,
+                    validated_data[field],
+                )
+
+        employee.save()
+
+        if (
+            "profile_photo" in validated_data
+            and old_profile_photo_name
+            and old_profile_photo_storage
+            and old_profile_photo_name != employee.profile_photo.name
+        ):
+            transaction.on_commit(
+                lambda: old_profile_photo_storage.delete(
+                    old_profile_photo_name,
+                )
+            )
+
+        return employee
+
+    @classmethod
+    @transaction.atomic
     def update_employee(
         cls,
         employee,

@@ -55,3 +55,19 @@ class TokenValidationSerializer(serializers.Serializer):
     token = serializers.CharField(
         write_only=True,
     )
+
+
+class TokenRefreshSerializer(serializers.Serializer):
+    """
+    Serializer for refreshing authentication tokens.
+    """
+
+    refresh = serializers.CharField(
+        write_only=True,
+    )
+
+class LogoutSerializer(serializers.Serializer):
+    """
+    Serializer for logging out the current authentication session.
+    """
+    refresh = serializers.CharField(write_only=True)
