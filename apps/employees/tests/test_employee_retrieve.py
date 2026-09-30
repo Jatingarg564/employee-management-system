@@ -29,7 +29,7 @@ class EmployeeRetrieveAPITest(EmployeeBaseAPITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data["results"]),
             EmployeeFactory.counter
         )
 
@@ -102,7 +102,7 @@ class EmployeeRetrieveAPITest(EmployeeBaseAPITestCase):
 
         ids = [
             emp["id"]
-            for emp in response.data
+            for emp in response.data["results"]
         ]
 
         self.assertIn(
@@ -183,7 +183,7 @@ class EmployeeRetrieveAPITest(EmployeeBaseAPITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data["results"]),
             0
         )
 

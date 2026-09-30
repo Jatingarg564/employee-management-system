@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.employees.api.views import (
     CurrentEmployeeAPIView,
+    DashboardStatsAPIView,
     DepartmentListCreateAPIView,
     DepartmentRetrieveUpdateDestroyAPIView,
     DesignationListAPIView,
@@ -11,6 +12,13 @@ from apps.employees.api.views import (
 )
 
 urlpatterns = [
+
+    # Dashboard
+    path(
+        "dashboard/stats/",
+        DashboardStatsAPIView.as_view(),
+        name="dashboard-stats",
+    ),
 
     # Designations
     path(

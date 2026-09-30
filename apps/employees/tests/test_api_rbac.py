@@ -297,9 +297,11 @@ class EmployeeAPIRBACTestCase(APITestCase):
             status.HTTP_200_OK,
         )
 
+        self.assertIn("results", response.data)
+
         returned_ids = {
             employee["id"]
-            for employee in response.data
+            for employee in response.data["results"]
         }
 
         expected_ids = set(
@@ -309,10 +311,67 @@ class EmployeeAPIRBACTestCase(APITestCase):
             )
         )
 
-        self.assertEqual(
-            returned_ids,
-            expected_ids,
+        self.assertTrue(
+            returned_ids.issubset(expected_ids),
         )
+        self.assertEqual(
+            response.data["count"],
+            len(expected_ids),
+        )
+
+    def test_employee_list_is_paginated(self):
+        self.authenticate_as(self.admin)
+
+        for index in range(15):
+            User.objects.create_user(
+                username=f"extra{index}",
+                email=f"extra{index}@example.com",
+                password="Admin@123",
+            )
+            Employee.objects.create(
+                user=User.objects.get(username=f"extra{index}"),
+                employee_code=f"EXTRA{index:04d}",
+                first_name=f"Extra{index}",
+                last_name="User",
+                email=f"extra{index}@example.com",
+                phone_number=f"9000000{index + 20:03d}",
+                date_of_birth=date(1995, 1, 1),
+                date_of_joining=date.today(),
+                department=self.it_department,
+                designation=self.designation,
+                role=EmploymentRole.EMPLOYEE,
+                employment_type=EmploymentType.FULL_TIME,
+                salary=Decimal("50000"),
+                status=EmployeeStatus.ACTIVE,
+            )
+
+        response = self.client.get(
+            f"{self.employee_list_url()}?page=1",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIn("count", response.data)
+        self.assertIn("next", response.data)
+        self.assertIn("previous", response.data)
+        self.assertIn("results", response.data)
+        self.assertEqual(response.data["count"], Employee.objects.count())
+        self.assertIsNotNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertLessEqual(len(response.data["results"]), 10)
+
+        second_page = self.client.get(
+            f"{self.employee_list_url()}?page=2",
+        )
+
+        self.assertEqual(
+            second_page.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIsNotNone(second_page.data["previous"])
+        self.assertGreater(len(second_page.data["results"]), 0)
 
     def test_hr_can_list_all_employees(self):
         self.authenticate_as(self.hr)
@@ -328,7 +387,7 @@ class EmployeeAPIRBACTestCase(APITestCase):
 
         returned_ids = {
             employee["id"]
-            for employee in response.data
+            for employee in response.data["results"]
         }
 
         expected_ids = set(
@@ -338,9 +397,12 @@ class EmployeeAPIRBACTestCase(APITestCase):
             )
         )
 
+        self.assertTrue(
+            returned_ids.issubset(expected_ids),
+        )
         self.assertEqual(
-            returned_ids,
-            expected_ids,
+            response.data["count"],
+            len(expected_ids),
         )
 
     def test_manager_can_list_direct_subordinates_only(self):
@@ -357,7 +419,7 @@ class EmployeeAPIRBACTestCase(APITestCase):
 
         returned_ids = {
             employee["id"]
-            for employee in response.data
+            for employee in response.data["results"]
         }
 
         self.assertEqual(
@@ -392,7 +454,7 @@ class EmployeeAPIRBACTestCase(APITestCase):
 
         returned_ids = {
             employee["id"]
-            for employee in response.data
+            for employee in response.data["results"]
         }
 
         self.assertIn(
@@ -419,7 +481,7 @@ class EmployeeAPIRBACTestCase(APITestCase):
 
         returned_ids = {
             employee["id"]
-            for employee in response.data
+            for employee in response.data["results"]
         }
 
         self.assertEqual(

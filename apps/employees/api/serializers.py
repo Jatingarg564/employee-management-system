@@ -348,6 +348,26 @@ class EmployeeStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    manager_name = serializers.SerializerMethodField()
+    head_name = serializers.SerializerMethodField()
+
+    def get_manager_name(self, obj):
+        if obj.manager is None:
+            return None
+
+        return (
+            f"{obj.manager.first_name} "
+            f"{obj.manager.last_name}"
+        )
+
+    def get_head_name(self, obj):
+        if obj.head is None:
+            return None
+
+        return (
+            f"{obj.head.first_name} "
+            f"{obj.head.last_name}"
+        )
 
     class Meta:
         model = Department
@@ -357,7 +377,9 @@ class DepartmentSerializer(serializers.ModelSerializer):
             "name",
             "code",
             "manager",
+            "manager_name",
             "head",
+            "head_name",
             "budget",
             "location",
             "is_active",
@@ -367,6 +389,8 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
         read_only_fields = (
             "id",
+            "manager_name",
+            "head_name",
             "is_active",
             "created_at",
             "updated_at",

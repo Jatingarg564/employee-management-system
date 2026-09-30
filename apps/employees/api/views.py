@@ -16,6 +16,7 @@ from apps.employees.permissions import (
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from rest_framework import request, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -79,6 +80,21 @@ class EmployeeListCreateAPIView(APIView):
             "employee_code",
         )
 
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(
+            employees,
+            request,
+            view=self,
+        )
+
+        if page is not None:
+            serializer = EmployeeDetailSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            )
+            return paginator.get_paginated_response(serializer.data)
+
         serializer = EmployeeDetailSerializer(
             employees,
             many=True,
@@ -125,6 +141,49 @@ class EmployeeListCreateAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
+class DashboardStatsAPIView(APIView):
+    """
+    Return aggregate employee and department statistics
+    for the authenticated employee's accessible scope.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        employee = request.user.employee_profile
+
+        accessible_employees = get_accessible_employees(
+            employee,
+        )
+
+        accessible_departments = get_accessible_departments(
+            employee,
+        )
+
+        total_employees = accessible_employees.count()
+
+        active_employees = accessible_employees.filter(
+            status="AC",
+        ).count()
+
+        inactive_employees = (
+            accessible_employees
+            .exclude(status="AC")
+            .count()
+        )
+
+        total_departments = accessible_departments.count()
+
+        return Response(
+            {
+                "total_employees": total_employees,
+                "active_employees": active_employees,
+                "inactive_employees": inactive_employees,
+                "total_departments": total_departments,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class CurrentEmployeeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -495,16 +554,26 @@ class DepartmentListCreateAPIView(APIView):
             employee,
         )
 
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(
+            departments,
+            request,
+            view=self,
+        )
+
         if employee.role == EmploymentRole.EMPLOYEE:
             serializer = EmployeeDepartmentSerializer(
-                departments,
+                page if page is not None else departments,
                 many=True,
             )
         else:
             serializer = DepartmentSerializer(
-                departments,
+                page if page is not None else departments,
                 many=True,
             )
+
+        if page is not None:
+            return paginator.get_paginated_response(serializer.data)
 
         return Response(
             serializer.data,

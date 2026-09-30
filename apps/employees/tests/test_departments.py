@@ -348,10 +348,47 @@ class DepartmentAPITestCase(APITestCase):
             response.status_code,
             status.HTTP_200_OK,
         )
-
+        self.assertIn("results", response.data)
         self.assertTrue(
-            len(response.data) >= 1,
+            len(response.data["results"]) >= 1,
         )
+
+    def test_department_list_is_paginated(self):
+        for index in range(12):
+            Department.objects.create(
+                name=f"Department {index}",
+                code=f"D{index:02d}",
+                budget="100000.00",
+                location="Bangalore",
+            )
+
+        response = self.client.get(
+            f"{self.department_url()}?page=1",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIn("count", response.data)
+        self.assertIn("next", response.data)
+        self.assertIn("previous", response.data)
+        self.assertIn("results", response.data)
+        self.assertEqual(response.data["count"], Department.objects.count())
+        self.assertIsNotNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertLessEqual(len(response.data["results"]), 10)
+
+        second_page = self.client.get(
+            f"{self.department_url()}?page=2",
+        )
+
+        self.assertEqual(
+            second_page.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIsNotNone(second_page.data["previous"])
+        self.assertGreater(len(second_page.data["results"]), 0)
 
     def test_retrieve_department(self):
         response = self.client.get(
@@ -627,7 +664,7 @@ class DepartmentAPITestCase(APITestCase):
             response.status_code,
             status.HTTP_200_OK,
         )
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data["results"]), 2)
 
     def test_admin_can_access_administration(self):
         response = self.client.get(
