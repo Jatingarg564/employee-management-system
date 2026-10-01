@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     # Local
     "apps.accounts.apps.AccountsConfig",
     "apps.employees.apps.EmployeesConfig",
+    "apps.attendance.apps.AttendanceConfig",
 ]
 
 MIDDLEWARE = [
